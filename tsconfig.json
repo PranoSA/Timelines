@@ -7,6 +7,8 @@
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
+    //change unused variables to warning instead of error
+    "noUnusedLocals": false,
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
