@@ -15,6 +15,24 @@ const YearSlider: React.FC<Props> = ({
   const [sliderStartYear, setSliderStartYear] = useState(initialStartYear);
   const [sliderEndYear, setSliderEndYear] = useState(initialEndYear);
 
+  const lastInitialStartYear = useRef<number | null>(null);
+  const lastInitialEndYear = useRef<number | null>(null);
+
+  //only on initial mount, should lastInitialStartYear and lastInitialEndYear be set to initialStartYear and initialEndYear
+  useEffect(() => {
+    lastInitialStartYear.current = initialStartYear;
+    lastInitialEndYear.current = initialEndYear;
+  }, [initialEndYear, initialStartYear]);
+
+  //check when initialStartYear and initialEndYear changes
+  //if sliderStartYear was equal to initialStartYear before the change, update sliderStartYear
+  //then update lastInitialStartYear and lastInitialEndYear
+  useEffect(() => {
+    //just set
+    setSliderStartYear(initialStartYear);
+    setSliderEndYear(initialEndYear);
+  }, [initialStartYear, initialEndYear]);
+
   const dragging = useRef<'start' | 'end' | null>(null);
 
   // print when initialStartYear and initialEndYear changes
@@ -61,7 +79,7 @@ const YearSlider: React.FC<Props> = ({
     setSliderEndYear(newSliderEndYear);
 
     //sanity check -> if the start year i
-  }, [initialStartYear, initialEndYear]);
+  }, [initialStartYear, initialEndYear, sliderStartYear, sliderEndYear]);
   //const [dragging, setDragging] = useState<'start' | 'end' | null>(null);
   const setDragging = (type: 'start' | 'end' | null) => {
     dragging.current = type;

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { ApplicationState, TimeLine, TimeEvent } from '../types';
 import TimelineComponent from './Timeline';
 import EventDetails from './EventDetails';
@@ -188,6 +188,22 @@ const TimelineManager: React.FC = () => {
     setEndYear('');
   };
 
+  //change to multiple timelines when timelines change -> but not the events inside the timelines
+  const last_length_of_timeslines = useRef<number>(0);
+
+  //check if the length of the timelines has changed
+  useEffect(() => {
+    if (last_length_of_timeslines.current !== state.timelines.length) {
+      last_length_of_timeslines.current = state.timelines.length;
+      setState((prevState) => ({
+        ...prevState,
+        show_multiple_timelines: true,
+        current_timeline: null,
+      }));
+    }
+    last_length_of_timeslines.current = state.timelines.length;
+  }, [state.timelines]);
+
   const handleSliderYearChange = (startYear: number, endYear: number) => {
     console.log('slider year change', startYear, endYear);
     //setSliderStartYear(startYear);
@@ -229,30 +245,40 @@ const TimelineManager: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      <YearSlider
-        initialStartYear={sliderStartYear}
-        initialEndYear={sliderEndYear}
-        onYearChange={handleSliderYearChange}
-      />
+    <div className="p-4 flex flex-row flex-wrap">
       {/* Optoin to both download and upload a saved state*/}
-      <div className="flex space-x-4">
+      <div className="flex space-x-4 w-full justify-around p-4">
         <button
           onClick={saveState}
           className="p-2 bg-blue-500 text-white rounded"
         >
           Save State
         </button>
-        <input
-          type="file"
-          onChange={loadState}
-          className="p-2 border rounded"
+        <div className="relative">
+          <label
+            htmlFor="load-state"
+            className="text-black pr-3 rounded cursor-pointer dark:text-white"
+          >
+            Load State :
+          </label>
+          <input id="load-state" type="file" onChange={loadState} />
+        </div>
+      </div>
+
+      <h1 className="w-full text-center"> Filter Slider </h1>
+      <div className="w-full">
+        <YearSlider
+          initialStartYear={sliderStartYear}
+          initialEndYear={sliderEndYear}
+          onYearChange={handleSliderYearChange}
         />
       </div>
 
       {state.show_multiple_timelines ? (
-        <div className="flex flex-col items-center">
-          <h1 className="text-2xl font-bold mb-4">Multiple Timelines</h1>
+        <div className="w-full flex flex-col items-center">
+          <h1 className="text-2xl font-bold mb-4">
+            Showing Multiple Timelines
+          </h1>
           {addingTimeline ? (
             <div className="mb-4 dark:text-black flex flex-col items-center space-y-4">
               <FaTimes
@@ -409,7 +435,6 @@ const TimelineManager: React.FC = () => {
           )}
         </div>
       )}
-      <EventDetails event={selectedEvent} />
     </div>
   );
 };

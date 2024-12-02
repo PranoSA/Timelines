@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { TimeLine, TimeEvent } from '../types';
 import { FaCheckCircle, FaRegCircle, FaTrash } from 'react-icons/fa';
+import EventDetails from './EventDetails';
 
 type Props = {
   timelines: TimeLine[];
@@ -50,6 +51,15 @@ const TimelineComponent: React.FC<Props> = ({
     : timelines[0].events.map((event) => ({ ...event, timelineIndex: 0 }));
 
   //by
+  const [selectedEvent, setSelectedEvent] = useState<TimeEvent | null>(null);
+
+  const selectEvent = useCallback(
+    (event: TimeEvent) => {
+      setSelectedEvent(event);
+      onSelectEvent(event);
+    },
+    [onSelectEvent]
+  );
 
   const start_year = useMemo(
     //if start year exists, return the max of the min of all events year and start year
@@ -114,6 +124,81 @@ const TimelineComponent: React.FC<Props> = ({
   );
 
   //console.log('allEventsInRange: ', allEventsInRange);
+
+  //every time timelines changes, change filtered_timelines to include all timelines that weren't filtered out
+  //this is to ensure that when timelines change, the new timelines are included
+  //in the filtered timelines
+  useMemo(() => {
+    setFilteredTimelines(timelines);
+  }, [timelines]);
+
+  type TimelineRanges = {
+    events: {
+      year: number;
+      title: string;
+      description: string;
+      timelineIndex: number;
+    }[];
+    start_year: number;
+    end_year: number;
+  };
+
+  //split timelines if there is more than one event per 100px of width
+  const timeline_ranges = useMemo(() => {
+    const width_ofscreen = window.innerWidth;
+
+    const max_events = Math.floor(width_ofscreen / 150);
+
+    //now split the "events" into ranges
+    const ranges = [];
+
+    let current_range: {
+      year: number;
+      title: string;
+      description: string;
+      timelineIndex: number;
+    }[] = [];
+
+    let current_range_start = start_year;
+
+    let current_range_end = start_year;
+
+    for (let i = 0; i < allEventsInRange.length; i++) {
+      //collect events until there are max_events in the range
+      current_range.push(allEventsInRange[i]);
+
+      //edit timelineIndex based on the timeline of the event
+      current_range[current_range.length - 1].timelineIndex =
+        allEventsInRange[i].timelineIndex;
+
+      //update the end year of the range
+      current_range_end = allEventsInRange[i].year;
+
+      //if there are max_events in the range or this is the last event
+      //add the range to the ranges array
+      if (
+        current_range.length === max_events ||
+        i === allEventsInRange.length - 1
+      ) {
+        ranges.push({
+          events: current_range,
+          start_year: current_range_start,
+          end_year: current_range_end,
+        });
+
+        //reset the range
+        current_range = [];
+        current_range_start = current_range_end;
+
+        //if this is the last event, update the end year of the range
+        if (i === allEventsInRange.length - 1) {
+          current_range_end = allEventsInRange[i].year;
+        }
+      }
+    }
+
+    return ranges;
+  }, [allEventsInRange, start_year]);
 
   const heightOfEvent = useMemo(() => {
     //for this -> we will try to make it so that years don't interfere
@@ -244,70 +329,105 @@ const TimelineComponent: React.FC<Props> = ({
         <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-300 dark:bg-gray-700"></div>
         <div className="events relative w-full"></div>
       </div>
-      <div className="relative mt-[150px]">
-        <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-300 dark:bg-gray-700"></div>
-        <div className="events relative w-full">
-          {allEventsInRange.map((event, eventIndex) => {
-            const leftPosition =
-              ((event.year - start_year) / (end_year - start_year)) * 100;
+      {/* Padding on top */}
+      {timeline_ranges.map((timeline_range, index) => {
+        const end_year = timeline_range.end_year;
+        const start_year = timeline_range.start_year;
 
-            const isAbove = heightOfEvent[eventIndex] < 0;
-            // const verticalOffset = Math.floor(eventIndex / 2) * 30; // Adjust the offset as needed
-
-            const verticalOffset = heightFromHeightOffset(
-              heightOfEvent[eventIndex]
-            );
-            //Math.abs(heightOfEvent[eventIndex]) * 50;
-
-            //here is how to get verticalOffset ->
-            //there should be high variance for similar leftPosition
-
-            return (
+        return (
+          <div key={index}>
+            <>
               <div
-                key={eventIndex}
-                className="event absolute cursor-pointer"
-                onClick={() => onSelectEvent(event)}
+                className="dark:border-gray-700"
                 style={{
-                  left: `${leftPosition}%`,
+                  height: `${
+                    //largest negative in heightOfEvent * 60
+                    Math.max(...heightOfEvent.map((n) => Math.abs(n))) * 60 +
+                    100
+                  }px`,
+                }}
+              ></div>
+              <div className="relative">
+                <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-300 dark:bg-gray-700"></div>
+                <div className="events relative w-full">
+                  {timeline_range.events.map((event, eventIndex) => {
+                    const leftPosition =
+                      ((event.year - start_year) / (end_year - start_year)) *
+                      100;
+
+                    const isAbove = heightOfEvent[eventIndex] < 0;
+                    // const verticalOffset = Math.floor(eventIndex / 2) * 30; // Adjust the offset as needed
+
+                    const verticalOffset = heightFromHeightOffset(
+                      heightOfEvent[eventIndex]
+                    );
+                    //Math.abs(heightOfEvent[eventIndex]) * 50;
+
+                    //here is how to get verticalOffset ->
+                    //there should be high variance for similar leftPosition
+
+                    return (
+                      <div
+                        key={eventIndex}
+                        className="event absolute cursor-pointer"
+                        onClick={() => selectEvent(event)}
+                        style={{
+                          left: `${leftPosition}%`,
+                        }}
+                      >
+                        <div
+                          className={`absolute ${
+                            isAbove ? 'bottom-full mb-2' : 'top-full mt-2'
+                          } left-1/2 transform -translate-x-1/2`}
+                          style={{
+                            [isAbove ? 'bottom' : 'top']: `${verticalOffset}px`,
+                          }}
+                        >
+                          <span
+                            className={`event-year block text-center ${
+                              colors[event.timelineIndex % colors.length]
+                            } text-white rounded px-2 py-1`}
+                          >
+                            {event.year}
+                          </span>
+                          <span className="event-title block text-center mt-1">
+                            {event.title}
+                          </span>
+                        </div>
+                        <div
+                          className={`w-4 h-4 ${
+                            colors[event.timelineIndex % colors.length]
+                          } rounded-full border-2 border-white dark:border-gray-900`}
+                        ></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div
+                className=""
+                style={{
+                  height: `${height_offset + 50}px `,
                 }}
               >
-                <div
-                  className={`absolute ${
-                    isAbove ? 'bottom-full mb-2' : 'top-full mt-2'
-                  } left-1/2 transform -translate-x-1/2`}
-                  style={{
-                    [isAbove ? 'bottom' : 'top']: `${verticalOffset}px`,
-                  }}
-                >
-                  <span
-                    className={`event-year block text-center ${
-                      colors[event.timelineIndex % colors.length]
-                    } text-white rounded px-2 py-1`}
-                  >
-                    {event.year}
-                  </span>
-                  <span className="event-title block text-center mt-1">
-                    {event.title}
-                  </span>
-                </div>
-                <div
-                  className={`w-4 h-4 ${
-                    colors[event.timelineIndex % colors.length]
-                  } rounded-full border-2 border-white dark:border-gray-900`}
-                ></div>
+                {' '}
               </div>
-            );
-          })}
-        </div>
-      </div>
-      <div
-        className=""
-        style={{
-          height: `${height_offset}px`,
-        }}
-      >
-        {' '}
-      </div>
+              {/* If event that belongs to this timeline is within the range of the slider, show it */}
+              <div
+                className="h-[75px]"
+                style={{
+                  height: '150px',
+                }}
+              >
+                {selectedEvent &&
+                  timeline_range.events.find(
+                    (event) => event.year === selectedEvent.year
+                  ) && <EventDetails event={selectedEvent} />}
+              </div>
+            </>
+          </div>
+        );
+      })}
     </div>
   );
 };
