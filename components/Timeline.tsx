@@ -145,7 +145,8 @@ const TimelineComponent: React.FC<Props> = ({
 
   //split timelines if there is more than one event per 100px of width
   const timeline_ranges = useMemo(() => {
-    const width_ofscreen = window.innerWidth;
+    const width_ofscreen =
+      typeof window !== 'undefined' ? window.innerWidth : 0;
 
     const max_events = Math.floor(width_ofscreen / 150);
 
