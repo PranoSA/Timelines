@@ -2,7 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useMemo, useState, useCallback } from 'react';
 import { TimeLine, TimeEvent } from '../types';
-import { FaCheckCircle, FaRegCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaRegCircle, FaTrash } from 'react-icons/fa';
 
 type Props = {
   timelines: TimeLine[];
@@ -12,6 +12,7 @@ type Props = {
   startYear?: number | '';
   endYear?: number | '';
   onYearRangeChange?: (startYear: number, endYear: number) => void;
+  onDeleteTimeline: (timeline: TimeLine) => void;
 };
 
 const colors = [
@@ -19,6 +20,8 @@ const colors = [
   'bg-blue-500',
   'bg-yellow-500',
   'bg-purple-500',
+  'bg-orange-500',
+  'bg-gray-500',
 ];
 
 const text_colors = [
@@ -26,6 +29,8 @@ const text_colors = [
   'text-blue-500',
   'text-yellow-500',
   'text-purple-500',
+  'text-orange-500',
+  'text-gray-500',
 ];
 
 const TimelineComponent: React.FC<Props> = ({
@@ -36,12 +41,15 @@ const TimelineComponent: React.FC<Props> = ({
   startYear,
   endYear,
   onYearRangeChange,
+  onDeleteTimeline,
 }) => {
   const allEvents = showMultipleTimelines
     ? timelines.flatMap((timeline, timelineIndex) =>
         timeline.events.map((event) => ({ ...event, timelineIndex }))
       )
     : timelines[0].events.map((event) => ({ ...event, timelineIndex: 0 }));
+
+  //by
 
   const start_year = useMemo(
     //if start year exists, return the max of the min of all events year and start year
@@ -87,11 +95,8 @@ const TimelineComponent: React.FC<Props> = ({
         ? filtered_timelines.flatMap((timeline, timelineIndex) =>
             timeline.events.map((event) => ({ ...event, timelineIndex }))
           )
-        : filtered_timelines[0].events.map((event) => ({
-            ...event,
-            timelineIndex: 0,
-          })),
-    [filtered_timelines, showMultipleTimelines]
+        : timelines[0].events.map((event) => ({ ...event, timelineIndex: 0 })),
+    [filtered_timelines, showMultipleTimelines, timelines]
   );
 
   //console.log('start_year: ', start_year);
@@ -189,13 +194,16 @@ const TimelineComponent: React.FC<Props> = ({
         <h2 className="text-2xl font-bold dark:text-white">
           {showMultipleTimelines ? 'Timelines' : timelines[0].title}
         </h2>
-        <div className="flex flex-col space-y-2 mt-4">
+        <div className="flex flex-row flex-wrap space-y-2 mt-4">
           {timelines.map((timeline, index) => (
             <div
               key={index}
-              className={`cursor-pointer p-4 rounded border ${
-                timeline.shown ? 'border-blue-500' : 'border-gray-300'
-              }`}
+              className={`cursor-pointer p-4 rounded border 
+                  w-full
+                  md:w-1/2
+                  lg:w-1/3
+                  xl:w-1/4
+                ${timeline.shown ? 'border-blue-500' : 'border-gray-300'}`}
             >
               <div className="flex items-center space-x-2">
                 {
@@ -222,6 +230,11 @@ const TimelineComponent: React.FC<Props> = ({
                 >
                   {timeline.title}
                 </span>
+                <FaTrash
+                  className="text-red-500"
+                  size={30}
+                  onClick={() => onDeleteTimeline(timeline)}
+                />
               </div>
             </div>
           ))}

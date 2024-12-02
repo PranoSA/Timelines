@@ -38,6 +38,13 @@ const TimelineManager: React.FC = () => {
   const [startYear, setStartYear] = useState<number | ''>('');
   const [endYear, setEndYear] = useState<number | ''>('');
 
+  const deleteTimeline = (timeline: TimeLine) => {
+    setState((prevState) => ({
+      ...prevState,
+      timelines: prevState.timelines.filter((t) => t !== timeline),
+    }));
+  };
+
   // This is for the range for the slider to set
   // it should be a subset of the range of all events
   // for the purposes of not having to zoom out too much
@@ -92,6 +99,13 @@ const TimelineManager: React.FC = () => {
       (timeline) => timeline.events.length > 0
     );
 
+    const all_events = filteredTimelines.reduce(
+      (acc, timeline) => [...acc, ...timeline.events],
+      [] as TimeEvent[]
+    );
+
+    const min_year = Math.min(...all_events.map((event) => event.year));
+
     //return min of all events
     const new_min_year = filteredTimelines.reduce((min, timeline) => {
       const minEventYear = Math.min(
@@ -100,8 +114,8 @@ const TimelineManager: React.FC = () => {
       return minEventYear;
     }, todaysYear - 1);
 
-    console.log('sliderStartYearDriven: ', new_min_year);
-    return new_min_year;
+    console.log('sliderStartYearDriven: ', min_year);
+    return min_year;
   }, [state.timelines, todaysYear]);
 
   useEffect(() => {
@@ -206,6 +220,12 @@ const TimelineManager: React.FC = () => {
       setState(json);
     };
     fileReader.readAsText(file);
+    //set to multiple timelines
+    setState((prevState) => ({
+      ...prevState,
+      show_multiple_timelines: true,
+      current_timeline: null,
+    }));
   };
 
   return (
@@ -247,13 +267,12 @@ const TimelineManager: React.FC = () => {
                 onChange={(e) => setNewTimelineTitle(e.target.value)}
                 className="p-2 border rounded w-64"
               />
-              <input
-                type="text"
+              <textarea
                 placeholder="Timeline Description"
                 value={newTimelineDescription}
                 onChange={(e) => setNewTimelineDescription(e.target.value)}
-                className="p-2 border rounded w-64"
-              />
+                className="p-2 border rounded w-64 h-32 resize-none"
+              ></textarea>
               <button
                 onClick={addTimeline}
                 className="p-2 bg-green-500 text-white rounded w-64"
@@ -279,6 +298,7 @@ const TimelineManager: React.FC = () => {
             startYear={startYear}
             endYear={endYear}
             onYearRangeChange={handleYearRangeChange}
+            onDeleteTimeline={deleteTimeline}
           />
         </div>
       ) : (
@@ -339,13 +359,15 @@ const TimelineManager: React.FC = () => {
                     onChange={(e) => setNewEventTitle(e.target.value)}
                     className="p-2 border rounded w-64"
                   />
-                  <input
-                    type="text"
+                  <textarea
+                    //type="text"
                     placeholder="Event Description"
                     value={newEventDescription}
                     onChange={(e) => setNewEventDescription(e.target.value)}
                     className="p-2 border rounded w-64"
-                  />
+                  >
+                    {' '}
+                  </textarea>
                   <input
                     type="number"
                     placeholder="Event Year"
@@ -381,6 +403,7 @@ const TimelineManager: React.FC = () => {
                 startYear={startYear}
                 endYear={endYear}
                 onYearRangeChange={handleYearRangeChange}
+                onDeleteTimeline={deleteTimeline}
               />
             </div>
           )}

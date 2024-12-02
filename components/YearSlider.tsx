@@ -23,6 +23,12 @@ const YearSlider: React.FC<Props> = ({
     console.log('sliderEndYear: ', sliderEndYear);
   }, [sliderStartYear, sliderEndYear]);
 
+  const expandToEntireRange = () => {
+    setSliderStartYear(initialStartYear);
+    setSliderEndYear(initialEndYear);
+    onYearChange(initialStartYear, initialEndYear);
+  };
+
   //print out initialStartYear and initialEndYear
   useEffect(() => {
     console.log('initialStartYear: ', initialStartYear);
@@ -174,6 +180,12 @@ const YearSlider: React.FC<Props> = ({
         <span className="text-lg font-semibold">{initialStartYear}</span>
         <span className="text-lg font-semibold">{initialEndYear}</span>
       </div>
+      <button
+        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+        onClick={expandToEntireRange}
+      >
+        Expand to full range
+      </button>
     </div>
   );
 };
