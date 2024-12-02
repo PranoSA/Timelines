@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo, useEffect } from 'react';
 import { ApplicationState, TimeLine, TimeEvent } from '../types';
 import TimelineComponent from './Timeline';
 import EventDetails from './EventDetails';
 import YearSlider from './YearSlider';
+import { FaTimes } from 'react-icons/fa';
 
 const TimelineManager: React.FC = () => {
   const [state, setState] = useState<ApplicationState>({
@@ -13,6 +15,10 @@ const TimelineManager: React.FC = () => {
     end_year_zoomed: 0,
     timelines: [],
   });
+
+  //const add timeline
+  const [addingTimeline, setAddingTimeline] = useState(false);
+  const [addingEvent, setAddingEvent] = useState(false);
 
   const [selectedEvent, setSelectedEvent] = useState<TimeEvent | null>(null);
 
@@ -54,13 +60,20 @@ const TimelineManager: React.FC = () => {
       return todaysYear;
     }
 
-    //else, return the max year of all events
-    return state.timelines.reduce((max, timeline) => {
-      const maxEventYear = Math.max(
-        ...timeline.events.map((event) => event.year)
-      );
-      return maxEventYear;
-    }, -12312412412541);
+    //filter out timelines that have at least one event
+    const filteredTimelines = state.timelines.filter(
+      (timeline) => timeline.events.length > 0
+    );
+
+    const all_events = filteredTimelines.reduce(
+      (acc, timeline) => [...acc, ...timeline.events],
+      [] as TimeEvent[]
+    );
+
+    const max_year = Math.max(...all_events.map((event) => event.year));
+
+    console.log('sliderEndYearDriven: ', max_year);
+    return max_year;
   }, [state.timelines, todaysYear]);
 
   //use memo for the purpose of setting the slider range
@@ -75,8 +88,12 @@ const TimelineManager: React.FC = () => {
       return todaysYear - 1;
     }
 
+    const filteredTimelines = state.timelines.filter(
+      (timeline) => timeline.events.length > 0
+    );
+
     //return min of all events
-    const new_min_year = state.timelines.reduce((min, timeline) => {
+    const new_min_year = filteredTimelines.reduce((min, timeline) => {
       const minEventYear = Math.min(
         ...timeline.events.map((event) => event.year)
       );
@@ -165,6 +182,32 @@ const TimelineManager: React.FC = () => {
     setStartYear(startYear);
   };
 
+  //save the current state to a json file and download it
+  const saveState = () => {
+    const data = `data:text/json;charset=utf-8,${encodeURIComponent(
+      JSON.stringify(state)
+    )}`;
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = 'timeline.json';
+    a.click();
+  };
+
+  //load a json file and set the state to the json file
+  const loadState = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fileReader = new FileReader();
+    fileReader.onload = (e) => {
+      if (!e.target) return;
+      const result = e.target.result;
+      if (typeof result !== 'string') return;
+      const json = JSON.parse(result);
+      setState(json);
+    };
+    fileReader.readAsText(file);
+  };
+
   return (
     <div className="p-4">
       <YearSlider
@@ -172,53 +215,62 @@ const TimelineManager: React.FC = () => {
         initialEndYear={sliderEndYear}
         onYearChange={handleSliderYearChange}
       />
-      {/*<div className="mb-4 flex items-center space-x-4">
-        <input
-          type="number"
-          placeholder="Start Year"
-          value={startYear}
-          onChange={(e) => setStartYear(Number(e.target.value))}
-          className="p-2 border rounded"
-        />
-        <input
-          type="number"
-          placeholder="End Year"
-          value={endYear}
-          onChange={(e) => setEndYear(Number(e.target.value))}
-          className="p-2 border rounded"
-        />
+      {/* Optoin to both download and upload a saved state*/}
+      <div className="flex space-x-4">
         <button
-          onClick={resetView}
+          onClick={saveState}
           className="p-2 bg-blue-500 text-white rounded"
         >
-          Reset View
+          Save State
         </button>
-      </div>*/}
+        <input
+          type="file"
+          onChange={loadState}
+          className="p-2 border rounded"
+        />
+      </div>
+
       {state.show_multiple_timelines ? (
-        <div>
-          <h1 className="text-2xl font-bold">Multiple Timelines</h1>
-          <div className="mb-4 dark:text-black">
-            <input
-              type="text"
-              placeholder="Timeline Title"
-              value={newTimelineTitle}
-              onChange={(e) => setNewTimelineTitle(e.target.value)}
-              className="p-2 border rounded mr-2"
-            />
-            <input
-              type="text"
-              placeholder="Timeline Description"
-              value={newTimelineDescription}
-              onChange={(e) => setNewTimelineDescription(e.target.value)}
-              className="p-2 border rounded mr-2"
-            />
-            <button
-              onClick={addTimeline}
-              className="p-2 bg-green-500 text-white rounded"
-            >
-              Add Timeline
-            </button>
-          </div>
+        <div className="flex flex-col items-center">
+          <h1 className="text-2xl font-bold mb-4">Multiple Timelines</h1>
+          {addingTimeline ? (
+            <div className="mb-4 dark:text-black flex flex-col items-center space-y-4">
+              <FaTimes
+                onClick={() => setAddingTimeline(false)}
+                className="cursor-pointer ml-2 dark:text-white"
+                size={30}
+              />
+              <input
+                type="text"
+                placeholder="Timeline Title"
+                value={newTimelineTitle}
+                onChange={(e) => setNewTimelineTitle(e.target.value)}
+                className="p-2 border rounded w-64"
+              />
+              <input
+                type="text"
+                placeholder="Timeline Description"
+                value={newTimelineDescription}
+                onChange={(e) => setNewTimelineDescription(e.target.value)}
+                className="p-2 border rounded w-64"
+              />
+              <button
+                onClick={addTimeline}
+                className="p-2 bg-green-500 text-white rounded w-64"
+              >
+                Add Timeline
+              </button>
+            </div>
+          ) : (
+            <div className="mb-4 dark:text-black">
+              <button
+                onClick={() => setAddingTimeline(true)}
+                className="p-2 bg-green-500 text-white rounded"
+              >
+                Add Timeline
+              </button>
+            </div>
+          )}
           <TimelineComponent
             timelines={state.timelines}
             onSelectEvent={setSelectedEvent}
@@ -230,10 +282,13 @@ const TimelineManager: React.FC = () => {
           />
         </div>
       ) : (
-        <div>
-          <h1 className="text-2xl font-bold">Single Timeline</h1>
+        <div className="flex flex-col items-center w-full">
+          <h1 className="text-2xl font-bold">
+            {state.current_timeline ? state.current_timeline.title : ''}
+          </h1>
           {/* go bvack to multiple timelines */}
-          <button
+          <div
+            className="flex space-x-4"
             onClick={() =>
               setState((prevState) => ({
                 ...prevState,
@@ -241,46 +296,84 @@ const TimelineManager: React.FC = () => {
                 current_timeline: null,
               }))
             }
-            className="p-2 bg-blue-500 text-white rounded"
           >
-            Back to Multiple Timelines
-          </button>
+            <button
+              onClick={() =>
+                setState((prevState) => ({
+                  ...prevState,
+                  show_multiple_timelines: true,
+                  current_timeline: null,
+                }))
+              }
+              className="m-3 text-white font-bold hover:border-b-2 border-white"
+            >
+              Back to Multiple Timelines
+            </button>
+            <FaTimes
+              onClick={() =>
+                setState((prevState) => ({
+                  ...prevState,
+                  show_multiple_timelines: true,
+                  current_timeline: null,
+                }))
+              }
+              className="cursor-pointer ml-2 dark:text-white"
+              size={30}
+            />
+          </div>
 
           {state.current_timeline && (
-            <div>
-              <div className="mb-4 dark:text-black">
-                <input
-                  type="text"
-                  placeholder="Event Title"
-                  value={newEventTitle}
-                  onChange={(e) => setNewEventTitle(e.target.value)}
-                  className="p-2 border rounded mr-2"
-                />
-                <input
-                  type="text"
-                  placeholder="Event Description"
-                  value={newEventDescription}
-                  onChange={(e) => setNewEventDescription(e.target.value)}
-                  className="p-2 border rounded mr-2"
-                />
-                <input
-                  type="number"
-                  placeholder="Event Year"
-                  value={newEventYear}
-                  onChange={(e) => setNewEventYear(Number(e.target.value))}
-                  className="p-2 border rounded mr-2"
-                />
-                <button
-                  onClick={() =>
-                    addEventToTimeline(
-                      state.timelines.indexOf(state.current_timeline!)
-                    )
-                  }
-                  className="p-2 bg-green-500 text-white rounded"
-                >
-                  Add Event
-                </button>
-              </div>
+            <div className="w-full">
+              {addingEvent ? (
+                <div className="mb-8 w-full dark:text-black flex flex-col items-center space-y-4">
+                  <h2 className="text-xl font-bold mb-4">Add New Event</h2>
+                  <FaTimes
+                    onClick={() => setAddingEvent(false)}
+                    className="cursor-pointer ml-2 dark:text-white"
+                    size={30}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Event Title"
+                    value={newEventTitle}
+                    onChange={(e) => setNewEventTitle(e.target.value)}
+                    className="p-2 border rounded w-64"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Event Description"
+                    value={newEventDescription}
+                    onChange={(e) => setNewEventDescription(e.target.value)}
+                    className="p-2 border rounded w-64"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Event Year"
+                    value={newEventYear}
+                    onChange={(e) => setNewEventYear(Number(e.target.value))}
+                    className="p-2 border rounded w-64"
+                  />
+                  <button
+                    onClick={() =>
+                      addEventToTimeline(
+                        state.timelines.indexOf(state.current_timeline!)
+                      )
+                    }
+                    className="p-2 bg-green-500 text-white rounded w-64"
+                  >
+                    Add Event
+                  </button>
+                </div>
+              ) : (
+                <div className="mb-4 dark:text-black">
+                  <button
+                    onClick={() => setAddingEvent(true)}
+                    className="p-2 bg-green-500 text-white rounded"
+                  >
+                    Add Event
+                  </button>
+                </div>
+              )}
               <TimelineComponent
                 timelines={[state.current_timeline]}
                 onSelectEvent={setSelectedEvent}

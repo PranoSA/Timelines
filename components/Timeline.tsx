@@ -2,6 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useMemo, useState, useCallback } from 'react';
 import { TimeLine, TimeEvent } from '../types';
+import { FaCheckCircle, FaRegCircle } from 'react-icons/fa';
 
 type Props = {
   timelines: TimeLine[];
@@ -18,6 +19,13 @@ const colors = [
   'bg-blue-500',
   'bg-yellow-500',
   'bg-purple-500',
+];
+
+const text_colors = [
+  'text-green-500',
+  'text-blue-500',
+  'text-yellow-500',
+  'text-purple-500',
 ];
 
 const TimelineComponent: React.FC<Props> = ({
@@ -56,21 +64,51 @@ const TimelineComponent: React.FC<Props> = ({
     [allEvents, endYear]
   );
 
-  console.log('start_year: ', start_year);
-  console.log('Slider Start Year Prop: ', startYear);
-  console.log('end_year: ', end_year);
-  console.log('Slider End Year Prop: ', endYear);
+  const [filtered_timelines, setFilteredTimelines] =
+    useState<TimeLine[]>(timelines);
+
+  const toggleFilterTimeline = (timeline: TimeLine) => {
+    //if filtered_timelines includes this timeline, remove it
+    //else add it
+    if (filtered_timelines.includes(timeline)) {
+      setFilteredTimelines(
+        filtered_timelines.filter(
+          (filtered_timeline) => filtered_timeline !== timeline
+        )
+      );
+    } else {
+      setFilteredTimelines([...filtered_timelines, timeline]);
+    }
+  };
+
+  const all_filtered_events = useMemo(
+    () =>
+      showMultipleTimelines
+        ? filtered_timelines.flatMap((timeline, timelineIndex) =>
+            timeline.events.map((event) => ({ ...event, timelineIndex }))
+          )
+        : filtered_timelines[0].events.map((event) => ({
+            ...event,
+            timelineIndex: 0,
+          })),
+    [filtered_timelines, showMultipleTimelines]
+  );
+
+  //console.log('start_year: ', start_year);
+  //console.log('Slider Start Year Prop: ', startYear);
+  //console.log('end_year: ', end_year);
+  //console.log('Slider End Year Prop: ', endYear);
 
   //filter out events that are not within the range of the slider
   const allEventsInRange = useMemo(
     () =>
-      allEvents
+      all_filtered_events
         .filter((event) => event.year >= start_year && event.year <= end_year)
         .sort((a, b) => a.year - b.year),
-    [allEvents, start_year, end_year]
+    [all_filtered_events, start_year, end_year]
   );
 
-  console.log('allEventsInRange: ', allEventsInRange);
+  //console.log('allEventsInRange: ', allEventsInRange);
 
   const heightOfEvent = useMemo(() => {
     //for this -> we will try to make it so that years don't interfere
@@ -125,7 +163,7 @@ const TimelineComponent: React.FC<Props> = ({
     return levels_for_each_index_of_allEventsInRange;
   }, [allEventsInRange, start_year, end_year]);
 
-  console.log('heightOfEvent: ', heightOfEvent);
+  //console.log('heightOfEvent: ', heightOfEvent);
 
   const height_offset =
     Math.max(...heightOfEvent.map((n) => Math.abs(n))) * 50 + 100;
@@ -146,27 +184,49 @@ const TimelineComponent: React.FC<Props> = ({
   };
 
   return (
-    <div className="timeline-container">
-      {showMultipleTimelines && (
-        <div className="mb-20">
-          <h2 className="text-2xl font-bold dark:text-white">
-            Combined Timeline
-          </h2>
-          <div className="flex space-x-4">
-            {timelines.map((timeline, index) => (
-              <button
-                key={index}
-                className={`p-2 ${
-                  colors[index % colors.length]
-                } text-white rounded`}
-                onClick={() => onSelectTimeline && onSelectTimeline(timeline)}
-              >
-                {timeline.title}
-              </button>
-            ))}
-          </div>
+    <div className="timeline-container w-full">
+      <div className="mb-20">
+        <h2 className="text-2xl font-bold dark:text-white">
+          {showMultipleTimelines ? 'Timelines' : timelines[0].title}
+        </h2>
+        <div className="flex flex-col space-y-2 mt-4">
+          {timelines.map((timeline, index) => (
+            <div
+              key={index}
+              className={`cursor-pointer p-4 rounded border ${
+                timeline.shown ? 'border-blue-500' : 'border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                {
+                  //if filtered_timelines includes this timeline, show check circle, else show reg circle
+                  filtered_timelines.includes(timeline) ? (
+                    <FaCheckCircle
+                      className="text-green-500"
+                      onClick={() => toggleFilterTimeline(timeline)}
+                    />
+                  ) : (
+                    <FaRegCircle
+                      className="text-gray-500"
+                      onClick={() => toggleFilterTimeline(timeline)}
+                    />
+                  )
+                }
+                <span
+                  className={`${text_colors[index % text_colors.length]} ${
+                    !showMultipleTimelines && timeline.shown
+                      ? 'font-bold'
+                      : 'font-normal'
+                  }`}
+                  onClick={() => onSelectTimeline && onSelectTimeline(timeline)}
+                >
+                  {timeline.title}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
       <div className="relative mb-4">
         <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-300 dark:bg-gray-700"></div>
         <div className="events relative w-full"></div>

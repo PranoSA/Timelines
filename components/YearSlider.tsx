@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 type Props = {
@@ -22,6 +23,39 @@ const YearSlider: React.FC<Props> = ({
     console.log('sliderEndYear: ', sliderEndYear);
   }, [sliderStartYear, sliderEndYear]);
 
+  //print out initialStartYear and initialEndYear
+  useEffect(() => {
+    console.log('initialStartYear: ', initialStartYear);
+    console.log('initialEndYear: ', initialEndYear);
+    console.log('sliderStartYear: ', sliderStartYear);
+    console.log('sliderEndYear: ', sliderEndYear);
+    console.log('---');
+    //if initialStartYear changes in a way that makes the current slider not part of the range,
+    //update the slider to be part of the range
+    let newSliderStartYear = sliderStartYear;
+    let newSliderEndYear = sliderEndYear;
+
+    if (initialStartYear > sliderStartYear) {
+      newSliderStartYear = initialStartYear;
+    }
+
+    //if initialEndYear changes in a way that makes the current slider not part of the range,
+    //update the slider to be part of the range
+    if (initialEndYear < sliderEndYear) {
+      newSliderEndYear = initialEndYear;
+    }
+
+    //check if start year is greater than end year
+    if (newSliderStartYear > newSliderEndYear) {
+      newSliderStartYear = newSliderEndYear - 1;
+    }
+
+    //update the slider
+    setSliderStartYear(newSliderStartYear);
+    setSliderEndYear(newSliderEndYear);
+
+    //sanity check -> if the start year i
+  }, [initialStartYear, initialEndYear]);
   //const [dragging, setDragging] = useState<'start' | 'end' | null>(null);
   const setDragging = (type: 'start' | 'end' | null) => {
     dragging.current = type;
@@ -41,13 +75,7 @@ const YearSlider: React.FC<Props> = ({
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      console.log('handleMouseMove');
-      console.log('e.clientX: ', e.clientX);
-      console.log('e.clientY: ', e.clientY);
-      console.log('dragging: ', dragging);
       if (!dragging) return;
-
-      console.log('dragging: ', dragging);
 
       const slider = document.getElementById('year-slider');
       if (!slider) return;
@@ -59,8 +87,6 @@ const YearSlider: React.FC<Props> = ({
             (e.clientX - sliderRect.left)) /
             sliderRect.width
       );
-
-      console.log('newYear: ', newYear);
 
       if (dragging.current === 'start' && newYear < sliderEndYear) {
         setSliderStartYear(newYear);
@@ -80,7 +106,6 @@ const YearSlider: React.FC<Props> = ({
   );
 
   const handleMouseUp = useCallback(() => {
-    console.log('handleMouseUp');
     setDragging(null);
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
@@ -88,19 +113,12 @@ const YearSlider: React.FC<Props> = ({
 
   const handleMouseDown = useCallback(
     (type: 'start' | 'end') => {
-      console.log('handleMouseDown');
-      console.log('type: ', type);
       setDragging(type);
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
     [handleMouseMove, handleMouseUp]
   );
-
-  const s =
-    (sliderStartYear - initialStartYear) / (initialEndYear - initialStartYear);
-
-  console.log('s: ', s);
 
   return (
     <div id="year-slider" className="relative mb-8 p-4">
