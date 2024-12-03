@@ -56,6 +56,34 @@ const TimelineManager: React.FC = () => {
   //get the current year
   const todaysYear = new Date().getFullYear();
 
+  const onEditTimeline = (timeline: TimeLine) => {
+    console.log('editing timeline', timeline);
+
+    //find the index of the timeline
+    const index = state.timelines.indexOf(timeline);
+
+    console.log('index of timeline: ', index);
+
+    //if the index is not found, return
+    if (index === -1) return;
+
+    //update the timeline
+    const newTimelines = [...state.timelines];
+
+    console.log('new timelines: ', newTimelines);
+
+    console.log('timeline to update: ', timeline);
+
+    newTimelines[index] = timeline;
+
+    console.log('new timelines after update: ', newTimelines);
+
+    setState((prevState) => ({
+      ...prevState,
+      timelines: newTimelines,
+    }));
+  };
+
   //use memo for the purpose of setting the slider range
   const maxSliderEndYear = useMemo(() => {
     //if there are no  events in the timelines, set the max year to the current year
@@ -325,6 +353,7 @@ const TimelineManager: React.FC = () => {
             endYear={endYear}
             onYearRangeChange={handleYearRangeChange}
             onDeleteTimeline={deleteTimeline}
+            onEditTimeline={onEditTimeline}
           />
         </div>
       ) : (
@@ -430,6 +459,7 @@ const TimelineManager: React.FC = () => {
                 endYear={endYear}
                 onYearRangeChange={handleYearRangeChange}
                 onDeleteTimeline={deleteTimeline}
+                onEditTimeline={onEditTimeline}
               />
             </div>
           )}

@@ -14,6 +14,7 @@ type Props = {
   endYear?: number | '';
   onYearRangeChange?: (startYear: number, endYear: number) => void;
   onDeleteTimeline: (timeline: TimeLine) => void;
+  onEditTimeline: (timeline: TimeLine) => void;
 };
 
 const colors = [
@@ -43,6 +44,7 @@ const TimelineComponent: React.FC<Props> = ({
   endYear,
   onYearRangeChange,
   onDeleteTimeline,
+  onEditTimeline,
 }) => {
   const allEvents = showMultipleTimelines
     ? timelines.flatMap((timeline, timelineIndex) =>
@@ -108,6 +110,67 @@ const TimelineComponent: React.FC<Props> = ({
         : timelines[0].events.map((event) => ({ ...event, timelineIndex: 0 })),
     [filtered_timelines, showMultipleTimelines, timelines]
   );
+
+  const editEvent = (updatedEvent: TimeEvent) => {
+    //find the timeline that the event belongs to
+    /* const timeline = timelines.find((timeline) =>
+      timeline.events.includes(updatedEvent)
+    );*/
+    if (!selectedEvent) return;
+
+    //get the timeline of the currently selected event
+    const timeline = timelines.find((timeline) =>
+      timeline.events.find((event) => {
+        return (
+          event.year === selectedEvent.year &&
+          event.title === selectedEvent.title &&
+          event.description === selectedEvent.description
+        );
+      })
+    );
+
+    console.log('selectedEvent: ', selectedEvent);
+
+    console.log('timeline: ', timeline);
+
+    if (!timeline) return;
+
+    //find the index of the event
+    const eventIndex = timeline.events.findIndex(
+      (event) =>
+        event.year === selectedEvent.year &&
+        event.title === selectedEvent.title &&
+        event.description === selectedEvent.description
+    );
+
+    console.log('updatedEvent: ', updatedEvent);
+
+    console.log('eventIndex: ', eventIndex);
+
+    //edit the event
+    timeline.events[eventIndex] = updatedEvent;
+
+    console.log('timeline.events[eventIndex]: ', timeline.events[eventIndex]);
+
+    //edit the timeline
+    onEditTimeline(timeline);
+
+    //now edit selectedEvent
+    setSelectedEvent(updatedEvent);
+  };
+
+  const getTimelineIndexOnEvent = (event: TimeEvent) => {
+    return timelines.findIndex((timeline) => {
+      //has event that has the same year, title, and description
+      return timeline.events.find((timelineEvent) => {
+        return (
+          timelineEvent.year === event.year &&
+          timelineEvent.title === event.title &&
+          timelineEvent.description === event.description
+        );
+      });
+    });
+  };
 
   //console.log('start_year: ', start_year);
   //console.log('Slider Start Year Prop: ', startYear);
@@ -224,6 +287,7 @@ const TimelineComponent: React.FC<Props> = ({
 
         //here is how to search ->
         //1 -> -1 -> 2 -> -2 -> 3 -> -3 -> 4 -> -4 -> 5 -> -5
+        //or 0->-1->1->-2->2->-3->3->-4->4->-5->5
 
         //now search -> if key does not exist -> its fine
         //if last seen at level exists -> check if the distance is greater than allowed_distance_between_slots
@@ -236,10 +300,10 @@ const TimelineComponent: React.FC<Props> = ({
         ) {
           //current_level_search++;
           //zig-zag current_level_search
-          if (current_level_search <= 0) {
-            current_level_search = Math.abs(current_level_search) + 1;
+          if (current_level_search < 0) {
+            current_level_search = Math.abs(current_level_search);
           } else {
-            current_level_search = -current_level_search;
+            current_level_search = -current_level_search - 1;
           }
           //current_level_search++;
         }
@@ -386,7 +450,9 @@ const TimelineComponent: React.FC<Props> = ({
                         >
                           <span
                             className={`event-year block text-center ${
-                              colors[event.timelineIndex % colors.length]
+                              colors[
+                                getTimelineIndexOnEvent(event) % colors.length
+                              ]
                             } text-white rounded px-2 py-1`}
                           >
                             {event.year}
@@ -397,7 +463,9 @@ const TimelineComponent: React.FC<Props> = ({
                         </div>
                         <div
                           className={`w-4 h-4 ${
-                            colors[event.timelineIndex % colors.length]
+                            colors[
+                              getTimelineIndexOnEvent(event) % colors.length
+                            ]
                           } rounded-full border-2 border-white dark:border-gray-900`}
                         ></div>
                       </div>
@@ -414,17 +482,24 @@ const TimelineComponent: React.FC<Props> = ({
                 {' '}
               </div>
               {/* If event that belongs to this timeline is within the range of the slider, show it */}
-              <div
-                className="h-[75px]"
-                style={{
-                  height: '150px',
-                }}
-              >
-                {selectedEvent &&
-                  timeline_range.events.find(
-                    (event) => event.year === selectedEvent.year
-                  ) && <EventDetails event={selectedEvent} />}
-              </div>
+
+              {selectedEvent &&
+                timeline_range.events.find(
+                  (event) => event.year === selectedEvent.year
+                ) && (
+                  <>
+                    <div
+                      style={{
+                        padding: '25px',
+                      }}
+                    >
+                      <EventDetails
+                        event={selectedEvent}
+                        editEvent={editEvent}
+                      />
+                    </div>
+                  </>
+                )}
             </>
           </div>
         );
