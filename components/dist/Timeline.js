@@ -133,6 +133,11 @@ var TimelineComponent = function (_a) {
             });
         });
     };
+    var _d = react_1.useState(null), editingTimeline = _d[0], setEditingTimeline = _d[1];
+    var _e = react_1.useState(''), editedTimelineTitle = _e[0], setEditedTimelineTitle = _e[1];
+    var _f = react_1.useState(''), editedTimelineDescription = _f[0], setEditedTimelineDescription = _f[1];
+    var editTitleRef = react_1["default"].useRef(null);
+    var editDescriptionRef = react_1["default"].useRef(null);
     //console.log('start_year: ', start_year);
     //console.log('Slider Start Year Prop: ', startYear);
     //console.log('end_year: ', end_year);

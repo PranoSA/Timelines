@@ -85,6 +85,11 @@ var TimelineManager = function () {
     // on its own scale
     var _k = react_1.useState(''), startYear = _k[0], setStartYear = _k[1];
     var _l = react_1.useState(''), endYear = _l[0], setEndYear = _l[1];
+    var _m = react_1.useState(null), editingTimeline = _m[0], setEditingTimeline = _m[1];
+    var _o = react_1.useState(''), editedTimelineTitle = _o[0], setEditedTimelineTitle = _o[1];
+    var _p = react_1.useState(''), editedTimelineDescription = _p[0], setEditedTimelineDescription = _p[1];
+    var editTitleRef = react_1["default"].useRef(null);
+    var editDescriptionRef = react_1["default"].useRef(null);
     var deleteTimeline = function (timeline) {
         setState(function (prevState) { return (__assign(__assign({}, prevState), { timelines: prevState.timelines.filter(function (t) { return t !== timeline; }) })); });
     };
@@ -93,10 +98,28 @@ var TimelineManager = function () {
     // for the purposes of not having to zoom out too much
     // so if the first event is 1777 and the last event is 2000
     // the slider should be able to go from 1777 to 2000
-    var _m = react_1.useState(500), sliderStartYear = _m[0], setSliderStartYear = _m[1];
-    var _o = react_1.useState(2000), sliderEndYear = _o[0], setSliderEndYear = _o[1];
+    var _q = react_1.useState(500), sliderStartYear = _q[0], setSliderStartYear = _q[1];
+    var _r = react_1.useState(2000), sliderEndYear = _r[0], setSliderEndYear = _r[1];
     //get the current year
     var todaysYear = new Date().getFullYear();
+    var onEditTimelineNew = function (timeline) {
+        //same thing -> except you use the current timeline
+        var index = state.timelines.findIndex(function (t) {
+            var _a, _b;
+            return t.description === ((_a = state.current_timeline) === null || _a === void 0 ? void 0 : _a.description) &&
+                t.title === ((_b = state.current_timeline) === null || _b === void 0 ? void 0 : _b.title);
+        });
+        console.log('current timeline: ', state.current_timeline);
+        console.log('current timelines ', state.timelines);
+        console.log('index of timeline: ', index);
+        if (index === -1)
+            return;
+        console.log('timeline to update: ', timeline);
+        var newTimelines = __spreadArrays(state.timelines);
+        newTimelines[index] = timeline;
+        console.log('new timelines after update: ', newTimelines);
+        setState(function (prevState) { return (__assign(__assign({}, prevState), { timelines: newTimelines })); });
+    };
     var onEditTimeline = function (timeline) {
         console.log('editing timeline', timeline);
         //find the index of the timeline
@@ -274,7 +297,34 @@ var TimelineManager = function () {
                 react_1["default"].createElement("button", { onClick: addTimeline, className: "p-2 bg-green-500 text-white rounded w-64" }, "Add Timeline"))) : (react_1["default"].createElement("div", { className: "mb-4 dark:text-black" },
                 react_1["default"].createElement("button", { onClick: function () { return setAddingTimeline(true); }, className: "p-2 bg-green-500 text-white rounded" }, "Add Timeline"))),
             react_1["default"].createElement(Timeline_1["default"], { timelines: state.timelines, onSelectEvent: setSelectedEvent, showMultipleTimelines: state.show_multiple_timelines, onSelectTimeline: selectTimeline, startYear: startYear, endYear: endYear, onYearRangeChange: handleYearRangeChange, onDeleteTimeline: deleteTimeline, onEditTimeline: onEditTimeline }))) : (react_1["default"].createElement("div", { className: "flex flex-col items-center w-full" },
-            react_1["default"].createElement("h1", { className: "text-2xl font-bold" }, state.current_timeline ? state.current_timeline.title : ''),
+            !editingTimeline ? (react_1["default"].createElement(react_1["default"].Fragment, null,
+                state.current_timeline ? state.current_timeline.title : '',
+                react_1["default"].createElement("div", { className: "flex space-x-4" }, 
+                //description
+                state.current_timeline
+                    ? state.current_timeline.description
+                    : ''),
+                react_1["default"].createElement(fa_1.FaPen, { onClick: function () {
+                        setEditingTimeline(state.current_timeline);
+                        setEditedTimelineTitle(state.current_timeline ? state.current_timeline.title : '');
+                        setEditedTimelineDescription(state.current_timeline
+                            ? state.current_timeline.description
+                            : '');
+                    }, className: "cursor-pointer ml-2 dark:text-white", size: 20 }))) : (react_1["default"].createElement("div", { className: "w-full flex flex-col p-3" },
+                react_1["default"].createElement("input", { ref: editTitleRef, type: "text", value: editedTimelineTitle, onChange: function (e) { return setEditedTimelineTitle(e.target.value); }, onKeyDown: function (e) {
+                        if (e.key === 'Enter') {
+                            setEditingTimeline(null);
+                            onEditTimelineNew(__assign(__assign({}, state.current_timeline), { title: editedTimelineTitle }));
+                        }
+                    }, className: "p-2 border rounded w-full border-black" }),
+                react_1["default"].createElement("textarea", { ref: editDescriptionRef, value: editedTimelineDescription, onChange: function (e) { return setEditedTimelineDescription(e.target.value); }, onKeyDown: function (e) {
+                        if (e.key === 'Enter') {
+                            setEditingTimeline(null);
+                            onEditTimelineNew(__assign(__assign({}, state.current_timeline), { description: editedTimelineDescription }));
+                        }
+                    }, className: "p-2 border rounded w-full" //resize-none
+                 }),
+                react_1["default"].createElement(fa_1.FaTimes, { onClick: function () { return setEditingTimeline(null); }, className: "cursor-pointer ml-2 dark:text-white", size: 20 }))),
             react_1["default"].createElement("div", { className: "flex space-x-4", onClick: function () {
                     return setState(function (prevState) { return (__assign(__assign({}, prevState), { show_multiple_timelines: true, current_timeline: null })); });
                 } },

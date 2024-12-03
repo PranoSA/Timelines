@@ -4,7 +4,8 @@ import { ApplicationState, TimeLine, TimeEvent } from '../types';
 import TimelineComponent from './Timeline';
 import EventDetails from './EventDetails';
 import YearSlider from './YearSlider';
-import { FaTimes } from 'react-icons/fa';
+import { FaPen, FaTimes } from 'react-icons/fa';
+import { cursorTo } from 'readline';
 
 const TimelineManager: React.FC = () => {
   const [state, setState] = useState<ApplicationState>({
@@ -38,6 +39,13 @@ const TimelineManager: React.FC = () => {
   const [startYear, setStartYear] = useState<number | ''>('');
   const [endYear, setEndYear] = useState<number | ''>('');
 
+  const [editingTimeline, setEditingTimeline] = useState<TimeLine | null>(null);
+  const [editedTimelineTitle, setEditedTimelineTitle] = useState<string>('');
+  const [editedTimelineDescription, setEditedTimelineDescription] =
+    useState<string>('');
+  const editTitleRef = React.useRef<HTMLInputElement>(null);
+  const editDescriptionRef = React.useRef<HTMLTextAreaElement>(null);
+
   const deleteTimeline = (timeline: TimeLine) => {
     setState((prevState) => ({
       ...prevState,
@@ -55,6 +63,36 @@ const TimelineManager: React.FC = () => {
 
   //get the current year
   const todaysYear = new Date().getFullYear();
+
+  const onEditTimelineNew = (timeline: TimeLine) => {
+    //same thing -> except you use the current timeline
+    const index = state.timelines.findIndex(
+      (t) =>
+        t.description === state.current_timeline?.description &&
+        t.title === state.current_timeline?.title
+    );
+
+    console.log('current timeline: ', state.current_timeline);
+
+    console.log('current timelines ', state.timelines);
+
+    console.log('index of timeline: ', index);
+
+    if (index === -1) return;
+
+    console.log('timeline to update: ', timeline);
+
+    const newTimelines = [...state.timelines];
+
+    newTimelines[index] = timeline;
+
+    console.log('new timelines after update: ', newTimelines);
+
+    setState((prevState) => ({
+      ...prevState,
+      timelines: newTimelines,
+    }));
+  };
 
   const onEditTimeline = (timeline: TimeLine) => {
     console.log('editing timeline', timeline);
@@ -358,9 +396,75 @@ const TimelineManager: React.FC = () => {
         </div>
       ) : (
         <div className="flex flex-col items-center w-full">
-          <h1 className="text-2xl font-bold">
-            {state.current_timeline ? state.current_timeline.title : ''}
-          </h1>
+          {!editingTimeline ? (
+            <>
+              {state.current_timeline ? state.current_timeline.title : ''}
+              <div className="flex space-x-4">
+                {
+                  //description
+                  state.current_timeline
+                    ? state.current_timeline.description
+                    : ''
+                }
+              </div>
+              <FaPen
+                onClick={() => {
+                  setEditingTimeline(state.current_timeline);
+                  setEditedTimelineTitle(
+                    state.current_timeline ? state.current_timeline.title : ''
+                  );
+                  setEditedTimelineDescription(
+                    state.current_timeline
+                      ? state.current_timeline.description
+                      : ''
+                  );
+                }}
+                className="cursor-pointer ml-2 dark:text-white"
+                size={20}
+              />
+            </>
+          ) : (
+            <div className="w-full flex flex-col p-3">
+              {/* Form for editing timeline */}
+              <input
+                ref={editTitleRef}
+                type="text"
+                value={editedTimelineTitle}
+                onChange={(e) => setEditedTimelineTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setEditingTimeline(null);
+                    onEditTimelineNew({
+                      ...state.current_timeline!,
+                      title: editedTimelineTitle,
+                    });
+                  }
+                }}
+                className="p-2 border rounded w-full border-black"
+              />
+              <textarea
+                ref={editDescriptionRef}
+                value={editedTimelineDescription}
+                onChange={(e) => setEditedTimelineDescription(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setEditingTimeline(null);
+                    onEditTimelineNew({
+                      ...state.current_timeline!,
+                      description: editedTimelineDescription,
+                    });
+                  }
+                }}
+                className="p-2 border rounded w-full" //resize-none
+              ></textarea>
+              <FaTimes
+                onClick={() => setEditingTimeline(null)}
+                className="cursor-pointer ml-2 dark:text-white"
+                size={20}
+              />
+            </div>
+          )}
+
           {/* go bvack to multiple timelines */}
           <div
             className="flex space-x-4"
