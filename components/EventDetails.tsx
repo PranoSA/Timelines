@@ -76,73 +76,81 @@ const EventDetails: React.FC<Props> = ({ event, editEvent }) => {
 
   return (
     <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md relative">
-      {editingEvent && editedField === 'year' ? (
-        <input
-          ref={inputYearRef}
-          type="number"
-          value={editedEventYear}
-          onChange={(e) => setEditedEventYear(Number(e.target.value))}
-          onKeyDown={handleKeyDown}
-          className="p-2 border rounded w-full mb-2"
-        />
-      ) : (
-        <h2 className="text-xl font-bold">
-          {event.year}
-          <FaPen
-            className="ml-2 cursor-pointer"
-            onClick={() => {
-              setEditingEvent(true);
-              setEditedField('year');
-            }}
-            size={20}
+      <div className="flex items-center mb-4">
+        {editingEvent && editedField === 'year' ? (
+          <input
+            ref={inputYearRef}
+            type="number"
+            value={editedEventYear}
+            onChange={(e) => setEditedEventYear(Number(e.target.value))}
+            onKeyDown={handleKeyDown}
+            className="p-2 border rounded w-full"
           />
-        </h2>
-      )}
+        ) : (
+          <>
+            <FaPen
+              className="mr-2 cursor-pointer"
+              onClick={() => {
+                setEditingEvent(true);
+                setEditedField('year');
+              }}
+              size={20}
+            />
+            <h2 className="text-xl font-bold">{event.year}</h2>
+          </>
+        )}
+      </div>
 
-      {editingEvent && editedField === 'title' ? (
-        <input
-          ref={inputTitleRef}
-          type="text"
-          value={editedEventTitle}
-          onChange={(e) => setEditedEventTitle(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="p-2 border rounded w-full mb-2"
-        />
-      ) : (
-        <h2 className="text-xl font-bold">
-          {event.title}
-          <FaPen
-            className="ml-2 cursor-pointer"
-            onClick={() => {
-              setEditingEvent(true);
-              setEditedField('title');
-            }}
-            size={20}
+      <div className="flex items-center mb-4">
+        {editingEvent && editedField === 'title' ? (
+          <input
+            ref={inputTitleRef}
+            type="text"
+            value={editedEventTitle}
+            onChange={(e) => setEditedEventTitle(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="p-2 border rounded w-full"
           />
-        </h2>
-      )}
+        ) : (
+          <>
+            <FaPen
+              className="mr-2 cursor-pointer"
+              onClick={() => {
+                setEditingEvent(true);
+                setEditedField('title');
+              }}
+              size={20}
+            />
+            <h2 className="text-xl font-bold">{event.title}</h2>
+          </>
+        )}
+      </div>
 
-      {editingEvent && editedField === 'description' ? (
-        <textarea
-          ref={inputDescriptionRef}
-          value={editedEventDescription}
-          onChange={(e) => setEditedEventDescription(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="p-2 border rounded w-full mb-2"
-        />
-      ) : (
-        <p className="text-gray-700 dark:text-gray-300">
-          {event.description}
-          <FaPen
-            className="ml-2 cursor-pointer"
-            onClick={() => {
-              setEditingEvent(true);
-              setEditedField('description');
-            }}
-            size={20}
+      <div className="flex items-center mb-4">
+        {editingEvent && editedField === 'description' ? (
+          <textarea
+            ref={inputDescriptionRef}
+            value={editedEventDescription}
+            onChange={(e) => setEditedEventDescription(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="p-2 border rounded w-full h-32 resize-none"
           />
-        </p>
-      )}
+        ) : (
+          <>
+            <FaPen
+              className="mr-2 cursor-pointer"
+              onClick={() => {
+                setEditingEvent(true);
+                setEditedField('description');
+              }}
+              size={20}
+            />
+            <p className="text-gray-700 dark:text-gray-300 ">
+              {event.description || 'No description available.'}
+            </p>
+          </>
+        )}
+      </div>
     </div>
   );
 };
