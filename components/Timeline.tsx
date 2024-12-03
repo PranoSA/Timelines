@@ -4,6 +4,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { TimeLine, TimeEvent } from '../types';
 import { FaCheckCircle, FaRegCircle, FaTrash } from 'react-icons/fa';
 import EventDetails from './EventDetails';
+import { FaPen } from 'react-icons/fa';
 
 type Props = {
   timelines: TimeLine[];
@@ -342,58 +343,62 @@ const TimelineComponent: React.FC<Props> = ({
     <div className="timeline-container w-full">
       <div className="mb-20">
         <h2 className="text-2xl font-bold dark:text-white">
-          {showMultipleTimelines ? 'Timelines' : timelines[0].title}
+          {showMultipleTimelines && 'Timelines'}
         </h2>
         <div className="flex flex-row flex-wrap space-y-2 mt-4">
-          {timelines.map((timeline, index) => (
-            <div
-              key={index}
-              className={`cursor-pointer p-4 rounded border 
+          {showMultipleTimelines &&
+            timelines.map((timeline, index) => (
+              <div
+                key={index}
+                className={`cursor-pointer p-4 rounded border 
                   w-full
                   md:w-1/2
                   lg:w-1/3
                   xl:w-1/4
                 ${timeline.shown ? 'border-blue-500' : 'border-gray-300'}`}
-            >
-              <div className="flex items-center space-x-2">
-                {
-                  //if filtered_timelines includes this timeline, show check circle, else show reg circle
-                  filtered_timelines.includes(timeline) ? (
-                    <FaCheckCircle
-                      className="text-green-500"
-                      onClick={() => toggleFilterTimeline(timeline)}
+              >
+                <div className="flex items-center space-x-2">
+                  {
+                    //if filtered_timelines includes this timeline, show check circle, else show reg circle
+                    filtered_timelines.includes(timeline) ? (
+                      <FaCheckCircle
+                        className="text-green-500"
+                        onClick={() => toggleFilterTimeline(timeline)}
+                      />
+                    ) : (
+                      <FaRegCircle
+                        className="text-gray-500"
+                        onClick={() => toggleFilterTimeline(timeline)}
+                      />
+                    )
+                  }
+                  <span
+                    className={`${text_colors[index % text_colors.length]} ${
+                      !showMultipleTimelines && timeline.shown
+                        ? 'font-bold'
+                        : 'font-normal'
+                    }`}
+                    onClick={() =>
+                      onSelectTimeline && onSelectTimeline(timeline)
+                    }
+                  >
+                    {timeline.title}
+                    <FaPen
+                      className="ml-2"
+                      onClick={() => onEditTimeline(timeline)}
                     />
-                  ) : (
-                    <FaRegCircle
-                      className="text-gray-500"
-                      onClick={() => toggleFilterTimeline(timeline)}
-                    />
-                  )
-                }
-                <span
-                  className={`${text_colors[index % text_colors.length]} ${
-                    !showMultipleTimelines && timeline.shown
-                      ? 'font-bold'
-                      : 'font-normal'
-                  }`}
-                  onClick={() => onSelectTimeline && onSelectTimeline(timeline)}
-                >
-                  {timeline.title}
-                </span>
-                <FaTrash
-                  className="text-red-500"
-                  size={30}
-                  onClick={() => onDeleteTimeline(timeline)}
-                />
+                  </span>
+                  <FaTrash
+                    className="text-red-500"
+                    size={30}
+                    onClick={() => onDeleteTimeline(timeline)}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
-      <div className="relative mb-4">
-        <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-300 dark:bg-gray-700"></div>
-        <div className="events relative w-full"></div>
-      </div>
+
       {/* Padding on top */}
       {timeline_ranges.map((timeline_range, index) => {
         const end_year = timeline_range.end_year;
@@ -403,7 +408,7 @@ const TimelineComponent: React.FC<Props> = ({
           <div key={index}>
             <>
               <div
-                className="dark:border-gray-700"
+                className=""
                 style={{
                   height: `${
                     //largest negative in heightOfEvent * 60
@@ -412,7 +417,7 @@ const TimelineComponent: React.FC<Props> = ({
                   }px`,
                 }}
               ></div>
-              <div className="relative">
+              <div className="relative ">
                 <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-300 dark:bg-gray-700"></div>
                 <div className="events relative w-full">
                   {timeline_range.events.map((event, eventIndex) => {

@@ -4,7 +4,7 @@ import { ApplicationState, TimeLine, TimeEvent } from '../types';
 import TimelineComponent from './Timeline';
 import EventDetails from './EventDetails';
 import YearSlider from './YearSlider';
-import { FaPen, FaTimes } from 'react-icons/fa';
+import { FaPen, FaPlus, FaTimes } from 'react-icons/fa';
 import { cursorTo } from 'readline';
 
 const TimelineManager: React.FC = () => {
@@ -39,12 +39,20 @@ const TimelineManager: React.FC = () => {
   const [startYear, setStartYear] = useState<number | ''>('');
   const [endYear, setEndYear] = useState<number | ''>('');
 
+  //if this is not set -> then the startYear and endYear will correspond to the
+  // maxEventYear and minEventYear
+  const [filterYears, setFilterYears] = useState<boolean>(false);
+
   const [editingTimeline, setEditingTimeline] = useState<TimeLine | null>(null);
   const [editedTimelineTitle, setEditedTimelineTitle] = useState<string>('');
   const [editedTimelineDescription, setEditedTimelineDescription] =
     useState<string>('');
   const editTitleRef = React.useRef<HTMLInputElement>(null);
   const editDescriptionRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const titleEventInputRef = useRef<HTMLInputElement>(null);
+  const descriptionEventInputRef = useRef<HTMLTextAreaElement>(null);
+  const yearEventInputRef = useRef<HTMLInputElement>(null);
 
   const deleteTimeline = (timeline: TimeLine) => {
     setState((prevState) => ({
@@ -60,6 +68,14 @@ const TimelineManager: React.FC = () => {
   // the slider should be able to go from 1777 to 2000
   const [sliderStartYear, setSliderStartYear] = useState<number>(500);
   const [sliderEndYear, setSliderEndYear] = useState<number>(2000);
+
+  //set the year to maxEventYear and minEventYear if the filterYears is set to false
+  useEffect(() => {
+    if (!filterYears) {
+      setStartYear(sliderStartYear);
+      setEndYear(sliderEndYear);
+    }
+  }, [filterYears, sliderEndYear, sliderStartYear]);
 
   //get the current year
   const todaysYear = new Date().getFullYear();
@@ -224,6 +240,9 @@ const TimelineManager: React.FC = () => {
     }));
     setNewTimelineTitle('');
     setNewTimelineDescription('');
+
+    //close the add timeline form
+    setAddingTimeline(false);
   };
 
   const addEventToTimeline = (timelineIndex: number) => {
@@ -280,13 +299,20 @@ const TimelineManager: React.FC = () => {
 
   //save the current state to a json file and download it
   const saveState = () => {
+    //change it so you are only saving the timelines
+
+    //change the name of the save file to be the timeline names separated by a "+"
+    const saveFileName = state.timelines
+      .map((timeline) => timeline.title)
+      .join('+');
+
     const data = `data:text/json;charset=utf-8,${encodeURIComponent(
       JSON.stringify(state, null, 2)
     )}`;
 
     const a = document.createElement('a');
     a.href = data;
-    a.download = 'timeline.json';
+    a.download = `${saveFileName}.json`;
     a.click();
   };
 
@@ -300,7 +326,57 @@ const TimelineManager: React.FC = () => {
       const result = e.target.result;
       if (typeof result !== 'string') return;
       const json = JSON.parse(result);
-      setState(json);
+
+      //this is the timelines, not the whole state
+      const new_state = {
+        ...state,
+        timelines: json.timelines,
+      };
+
+      setState(new_state);
+    };
+    fileReader.readAsText(file);
+    //set to multiple timelines
+    setState((prevState) => ({
+      ...prevState,
+      show_multiple_timelines: true,
+      current_timeline: null,
+    }));
+  };
+
+  //load state add will add the timelines to the current timelines
+  const loadStateAdd = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fileReader = new FileReader();
+    fileReader.onload = (e) => {
+      if (!e.target) return;
+      const result = e.target.result;
+      if (typeof result !== 'string') return;
+      const json = JSON.parse(result);
+
+      //this is the timelines, not the whole state
+
+      //check if a timeline with the same title already exists
+      //and then show the user a message that the timeline already exists
+      //and exit
+      const timeline_titles = state.timelines.map((timeline) => timeline.title);
+
+      const new_timelines = json.timelines.filter(
+        (timeline: TimeLine) => !timeline_titles.includes(timeline.title)
+      );
+
+      if (new_timelines.length === 0) {
+        alert('All timelines already exist');
+        return;
+      }
+
+      const new_state = {
+        ...state,
+        timelines: [...state.timelines, ...json.timelines],
+      };
+
+      setState(new_state);
     };
     fileReader.readAsText(file);
     //set to multiple timelines
@@ -330,16 +406,60 @@ const TimelineManager: React.FC = () => {
           </label>
           <input id="load-state" type="file" onChange={loadState} />
         </div>
+        {/* This one will be for adding timelines -> not just the state*/}
+        <div className="relative">
+          <label
+            htmlFor="load-timeline"
+            className="text-black pr-3 rounded cursor-pointer dark:text-white"
+          >
+            Add Timelines:
+          </label>
+          <input id="load-timeline" type="file" onChange={loadStateAdd} />
+        </div>
       </div>
-
-      <h1 className="w-full text-center"> Filter Slider </h1>
-      <div className="w-full">
-        <YearSlider
-          initialStartYear={sliderStartYear}
-          initialEndYear={sliderEndYear}
-          onYearChange={handleSliderYearChange}
-        />
-      </div>
+      {
+        //filter slider if filterYears is set to true
+        filterYears ? (
+          <div className="flex flex-col items-center w-full">
+            <div
+              onClick={() => {
+                setFilterYears(false);
+              }}
+            >
+              <button className="p-2 bg-blue-500 text-white rounded">
+                Stop Filtering Years{' '}
+                <FaTimes
+                  className="cursor-pointer ml-2 dark:text-white"
+                  size={20}
+                />
+              </button>
+            </div>
+            <h1 className="w-full text-center"> Filter Slider </h1>
+            <div className="w-full">
+              <YearSlider
+                initialStartYear={sliderStartYear}
+                initialEndYear={sliderEndYear}
+                onYearChange={handleSliderYearChange}
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div
+              onClick={() => setFilterYears(true)}
+              className="flex flex-row items-center w-full justify-center mb-4"
+            >
+              <button className="p-2 bg-blue-500 text-white rounded">
+                Filter Years
+              </button>
+              <FaPlus
+                className="cursor-pointer ml-2 dark:text-white"
+                size={20}
+              />
+            </div>
+          </>
+        )
+      }
 
       {state.show_multiple_timelines ? (
         <div className="w-full flex flex-col items-center">
@@ -398,8 +518,65 @@ const TimelineManager: React.FC = () => {
       ) : (
         <div className="flex flex-col items-center w-full">
           {!editingTimeline ? (
-            <>
-              {state.current_timeline ? state.current_timeline.title : ''}
+            <div className="w-full flex flex-col">
+              <div className="flex flex-row justify-around w-full">
+                <div className="flex flex-row">
+                  <h1 className="text-md font-bold mb-4">
+                    Exit Timeline / Go Back To All{' '}
+                  </h1>
+                  <FaTimes
+                    onClick={() =>
+                      setState((prevState) => ({
+                        ...prevState,
+                        show_multiple_timelines: true,
+                        current_timeline: null,
+                      }))
+                    }
+                    className="cursor-pointer ml-2 dark:text-white"
+                    size={20}
+                  />
+                </div>
+                <div className="flex flex-row">
+                  <h1 className="text-center text-2xl font-bold mb-4">
+                    {state.current_timeline ? state.current_timeline.title : ''}
+                  </h1>
+                  {/* Put the edit functionality here instead */}
+                  <FaPen
+                    onClick={() => {
+                      setEditingTimeline(state.current_timeline);
+                      setEditedTimelineTitle(
+                        state.current_timeline
+                          ? state.current_timeline.title
+                          : ''
+                      );
+                      setEditedTimelineDescription(
+                        state.current_timeline
+                          ? state.current_timeline.description
+                          : ''
+                      );
+                    }}
+                    className="cursor-pointer ml-2 dark:text-white"
+                    size={20}
+                    title="Alter Timeline Title and Description"
+                  />
+                </div>
+                {/*Write the Add Event Button Here instead*/}
+                <div className="mb-4 dark:text-black flex flex-row rounded bg-green-500">
+                  <button
+                    title="Add Event To Timeline"
+                    onClick={() => setAddingEvent(true)}
+                    className="p-2 text-black rounded font-bold text-2xl "
+                  >
+                    Add Event
+                  </button>
+                  <FaPlus
+                    className="cursor-pointer ml-2 dark:text-white"
+                    size={20}
+                    onClick={() => setAddingEvent(true)}
+                    title="Add Event To Timeline"
+                  />
+                </div>
+              </div>
               <div className="flex space-x-4">
                 {
                   //description
@@ -408,22 +585,7 @@ const TimelineManager: React.FC = () => {
                     : ''
                 }
               </div>
-              <FaPen
-                onClick={() => {
-                  setEditingTimeline(state.current_timeline);
-                  setEditedTimelineTitle(
-                    state.current_timeline ? state.current_timeline.title : ''
-                  );
-                  setEditedTimelineDescription(
-                    state.current_timeline
-                      ? state.current_timeline.description
-                      : ''
-                  );
-                }}
-                className="cursor-pointer ml-2 dark:text-white"
-                size={20}
-              />
-            </>
+            </div>
           ) : (
             <div className="w-full flex flex-col p-3">
               {/* Form for editing timeline */}
@@ -476,48 +638,34 @@ const TimelineManager: React.FC = () => {
                 current_timeline: null,
               }))
             }
-          >
-            <button
-              onClick={() =>
-                setState((prevState) => ({
-                  ...prevState,
-                  show_multiple_timelines: true,
-                  current_timeline: null,
-                }))
-              }
-              className="m-3 text-white font-bold hover:border-b-2 border-white"
-            >
-              Back to Multiple Timelines
-            </button>
-            <FaTimes
-              onClick={() =>
-                setState((prevState) => ({
-                  ...prevState,
-                  show_multiple_timelines: true,
-                  current_timeline: null,
-                }))
-              }
-              className="cursor-pointer ml-2 dark:text-white"
-              size={30}
-            />
-          </div>
+          ></div>
 
           {state.current_timeline && (
             <div className="w-full">
               {addingEvent ? (
                 <div className="mb-8 w-full dark:text-black flex flex-col items-center space-y-4">
-                  <h2 className="text-xl font-bold mb-4">Add New Event</h2>
-                  <FaTimes
-                    onClick={() => setAddingEvent(false)}
-                    className="cursor-pointer ml-2 dark:text-white"
-                    size={30}
-                  />
+                  <div className="flex flex-row">
+                    <h2 className="text-md font-bold mb-2">Adding New Event</h2>
+                    <FaTimes
+                      onClick={() => setAddingEvent(false)}
+                      className="cursor-pointer ml-2 dark:text-white"
+                      size={30}
+                      title="Quit Adding Event"
+                    />
+                  </div>
                   <input
                     type="text"
                     placeholder="Event Title"
                     value={newEventTitle}
                     onChange={(e) => setNewEventTitle(e.target.value)}
                     className="p-2 border rounded w-64"
+                    ref={titleEventInputRef}
+                    //add listener when focused -> "enter" focuses the description
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        descriptionEventInputRef.current?.focus();
+                      }
+                    }}
                   />
                   <textarea
                     //type="text"
@@ -525,6 +673,13 @@ const TimelineManager: React.FC = () => {
                     value={newEventDescription}
                     onChange={(e) => setNewEventDescription(e.target.value)}
                     className="p-2 border rounded w-64"
+                    ref={descriptionEventInputRef}
+                    //add listener when focused -> "enter" focuses the year
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        yearEventInputRef.current?.focus();
+                      }
+                    }}
                   >
                     {' '}
                   </textarea>
@@ -534,6 +689,15 @@ const TimelineManager: React.FC = () => {
                     value={newEventYear}
                     onChange={(e) => setNewEventYear(Number(e.target.value))}
                     className="p-2 border rounded w-64"
+                    ref={yearEventInputRef}
+                    //add listener -> event "enter" adds the event
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        addEventToTimeline(
+                          state.timelines.indexOf(state.current_timeline!)
+                        );
+                      }
+                    }}
                   />
                   <button
                     onClick={() =>
@@ -547,14 +711,7 @@ const TimelineManager: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="mb-4 dark:text-black">
-                  <button
-                    onClick={() => setAddingEvent(true)}
-                    className="p-2 bg-green-500 text-white rounded"
-                  >
-                    Add Event
-                  </button>
-                </div>
+                <div className="mb-4 dark:text-black"></div>
               )}
               <TimelineComponent
                 timelines={[state.current_timeline]}
