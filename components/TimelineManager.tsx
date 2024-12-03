@@ -281,8 +281,9 @@ const TimelineManager: React.FC = () => {
   //save the current state to a json file and download it
   const saveState = () => {
     const data = `data:text/json;charset=utf-8,${encodeURIComponent(
-      JSON.stringify(state)
+      JSON.stringify(state, null, 2)
     )}`;
+
     const a = document.createElement('a');
     a.href = data;
     a.download = 'timeline.json';

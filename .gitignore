@@ -38,3 +38,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#ignore all dist directories
+#whether its in components or app or etc.
+**/dist
+
+#ignore all js inside of dist directories
+**/dist/**/*.js
