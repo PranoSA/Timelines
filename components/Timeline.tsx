@@ -172,13 +172,6 @@ const TimelineComponent: React.FC<Props> = ({
     });
   };
 
-  const [editingTimeline, setEditingTimeline] = useState<TimeLine | null>(null);
-  const [editedTimelineTitle, setEditedTimelineTitle] = useState<string>('');
-  const [editedTimelineDescription, setEditedTimelineDescription] =
-    useState<string>('');
-  const editTitleRef = React.useRef<HTMLInputElement>(null);
-  const editDescriptionRef = React.useRef<HTMLTextAreaElement>(null);
-
   //console.log('start_year: ', start_year);
   //console.log('Slider Start Year Prop: ', startYear);
   //console.log('end_year: ', end_year);
