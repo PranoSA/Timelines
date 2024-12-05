@@ -53,6 +53,8 @@ const TimelineComponent: React.FC<Props> = ({
       )
     : timelines[0].events.map((event) => ({ ...event, timelineIndex: 0 }));
 
+  const [maxEventsPerTimeline, setMaxEventsPerTimeline] = useState(10);
+
   //by
   const [selectedEvent, setSelectedEvent] = useState<TimeEvent | null>(null);
 
@@ -212,7 +214,8 @@ const TimelineComponent: React.FC<Props> = ({
     const width_ofscreen =
       typeof window !== 'undefined' ? window.innerWidth : 0;
 
-    const max_events = Math.floor(width_ofscreen / 150);
+    //const max_events = Math.floor(width_ofscreen / 150);
+    const max_events = maxEventsPerTimeline;
 
     //now split the "events" into ranges
     const ranges = [];
@@ -263,7 +266,7 @@ const TimelineComponent: React.FC<Props> = ({
     }
 
     return ranges;
-  }, [allEventsInRange, start_year]);
+  }, [allEventsInRange, maxEventsPerTimeline, start_year]);
 
   const heightOfEvent = useMemo(() => {
     //for this -> we will try to make it so that years don't interfere
@@ -345,6 +348,20 @@ const TimelineComponent: React.FC<Props> = ({
         <h2 className="text-2xl font-bold dark:text-white">
           {showMultipleTimelines && 'Timelines'}
         </h2>
+        {/* Slider For Setting the Number of Events Per Timeline */}
+        <div className="w-full flex items-center justify-center">
+          <input
+            type="range"
+            min={1}
+            max={20}
+            value={maxEventsPerTimeline}
+            onChange={(e) => setMaxEventsPerTimeline(parseInt(e.target.value))}
+            className="w-1/2"
+          />
+          <span className="ml-2">
+            {maxEventsPerTimeline} Events Per Timeline
+          </span>
+        </div>
         <div className="flex flex-row flex-wrap space-y-2 mt-4">
           {showMultipleTimelines &&
             timelines.map((timeline, index) => (
