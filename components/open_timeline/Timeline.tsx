@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useMemo, useState, useCallback } from 'react';
-import { TimeLine, TimeEvent } from '../types';
+import { TimeLine, TimeEvent, PublishedTimelineEntered } from '@/types';
 import { FaCheckCircle, FaRegCircle, FaTrash } from 'react-icons/fa';
 //icon that shows "publishing"
 import { FaBook } from 'react-icons/fa';
 import EventDetails from './EventDetails';
 import { FaPen } from 'react-icons/fa';
-import { useSavedTimelines } from '../queries/saved';
+import { useSavedTimelines } from '@/queries/saved';
+import { usePublishTimelineMutation } from '@/queries/publish';
 
 type Props = {
   timelines: TimeLine[];
@@ -58,8 +59,6 @@ const TimelineComponent: React.FC<Props> = ({
 
   const [maxEventsPerTimeline, setMaxEventsPerTimeline] = useState(10);
 
-  const publishTimeline = () => {};
-
   //by
   const [selectedEvent, setSelectedEvent] = useState<TimeEvent | null>(null);
 
@@ -107,6 +106,22 @@ const TimelineComponent: React.FC<Props> = ({
     } else {
       setFilteredTimelines([...filtered_timelines, timeline]);
     }
+  };
+
+  const publishTimelineMutation = usePublishTimelineMutation();
+
+  const publishTimeline = async (timeline: TimeLine) => {
+    const timeline_to_publish: PublishedTimelineEntered = {
+      title: timeline.title,
+      description: timeline.description,
+      events: timeline.events,
+    };
+
+    const published = await publishTimelineMutation.mutateAsync(
+      timeline_to_publish
+    );
+
+    return published;
   };
 
   const all_filtered_events = useMemo(
@@ -414,6 +429,12 @@ const TimelineComponent: React.FC<Props> = ({
                     className="text-red-500"
                     size={30}
                     onClick={() => onDeleteTimeline(timeline)}
+                  />
+                  {/* Now Button to Publish Timeline */}
+                  <FaBook
+                    className="text-blue-500"
+                    size={30}
+                    onClick={() => publishTimeline(timeline)}
                   />
                 </div>
               </div>

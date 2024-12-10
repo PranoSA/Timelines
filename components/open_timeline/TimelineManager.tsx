@@ -1,54 +1,97 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useContext } from 'react';
 import {
   ApplicationState,
   TimeLine,
   TimeEvent,
   InsertionTimeLine,
-} from '../types';
+  FetchedTimeLine,
+  ApplicationStateEditing,
+  PublishedTimelineEntered,
+} from '@/types';
 import TimelineComponent from './Timeline';
 import EventDetails from './EventDetails';
 import YearSlider from './YearSlider';
 import { FaPen, FaPlus, FaTimes } from 'react-icons/fa';
 import { cursorTo } from 'readline';
-import { useSaveTimelineMutation } from '../queries/saved';
+import { useSaveTimelineMutation } from '@/queries/saved';
+import TimelineContext from '@/TimelineContext';
+import { useEditTimelineMutation } from '@/queries/saved';
 
-import { useSearchPublishedTimelines } from '@/queries/publish';
+//publish
+import { usePublishTimelineMutation } from '@/queries/publish';
+import { useSearchPublishedTimelines } from '../../queries/publish';
 
-const TimelineManager: React.FC = () => {
-  const [state, setState] = useState<ApplicationState>({
+//takes in initial timeline now
+type TimelineManagerProps = {
+  initialTimeline: FetchedTimeLine;
+};
+
+const TimelineManager: React.FC<TimelineManagerProps> = ({
+  initialTimeline,
+}) => {
+  const [state, setState] = useState<ApplicationStateEditing>({
     zoomed_in: false,
     show_multiple_timelines: true, // Start in multiple timeline mode
     current_timeline: null,
     start_year_zoomed: 0,
     end_year_zoomed: 0,
-    timelines: [],
+    timelines: initialTimeline.timelines.map((timeline) => ({
+      //add the shown property
+      ...timeline,
+      shown: true,
+    })),
+    title: initialTimeline.title,
+    description: initialTimeline.description,
+    user_id: initialTimeline.user_id,
   });
+
+  const { id } = useContext(TimelineContext);
 
   const [submittedTimelineName, setSubmittedTimelineName] = useState('');
   const [submittedTimelineDescription, setSubmittedTimelineDescription] =
     useState('');
 
-  const [openSearchModal, setOpenSearchModal] = useState(false);
-
   const [showSubmitTimelineModal, setShowSubmitTimelineModal] = useState(false);
 
   const saveTimeline = useSaveTimelineMutation();
 
+  const editTimeline = useEditTimelineMutation();
+
+  const [showSearchModal, setShowSearchModal] = useState(false);
+
   const submitTimeline = async () => {
     //make a InsertionTimeLine
-    const insertionTimeline: InsertionTimeLine = {
-      title: submittedTimelineName,
-      description: submittedTimelineDescription,
+    const insertionTimeline: FetchedTimeLine = {
+      id: id,
+      user_id: state.user_id,
+      title: state.title,
+      description: state.description,
       timelines: state.timelines,
     };
 
     console.log('insertionTimeline: ', insertionTimeline);
 
     //make a new timeline
-    const submit = await saveTimeline.mutateAsync(insertionTimeline);
+    const submit = await editTimeline.mutateAsync(insertionTimeline);
 
     return submit;
+  };
+
+  const publishTimelineMutation = usePublishTimelineMutation();
+
+  const publishTimeline = async (timeline: TimeLine) => {
+    const timeline_to_publish: PublishedTimelineEntered = {
+      title: timeline.title,
+      description: timeline.description,
+      events: timeline.events,
+    };
+
+    const published = await publishTimelineMutation.mutateAsync(
+      timeline_to_publish
+    );
+
+    return published;
   };
 
   //const add timeline
@@ -290,6 +333,13 @@ const TimelineManager: React.FC = () => {
     }));
   };
 
+  const addTimelineWithTimeline = (timeline: TimeLine) => {
+    setState((prevState) => ({
+      ...prevState,
+      timelines: [...prevState.timelines, timeline],
+    }));
+  };
+
   const addTimeline = () => {
     const newTimeline: TimeLine = {
       title: newTimelineTitle,
@@ -452,6 +502,21 @@ const TimelineManager: React.FC = () => {
 
   return (
     <div className="p-4 flex flex-row flex-wrap">
+      {/* Modal for searching published timelines */}
+      {!showSearchModal ? (
+        <button
+          onClick={() => setShowSearchModal(true)}
+          className="p-2 bg-blue-500 text-white rounded"
+        >
+          Search Published Timelines
+        </button>
+      ) : null}
+      <SearchModal
+        open_modal={showSearchModal}
+        close_modal={() => setShowSearchModal(false)}
+        add_timeline={addTimelineWithTimeline}
+      />
+
       {/* Optoin to both download and upload a saved state*/}
       {showSubmitTimelineModal && submitTimelineModal()}
       <div className="flex space-x-4 w-full justify-around p-4">
@@ -481,7 +546,8 @@ const TimelineManager: React.FC = () => {
           <input id="load-timeline" type="file" onChange={loadStateAdd} />
           <button
             onClick={() => {
-              setShowSubmitTimelineModal(true);
+              // setShowSubmitTimelineModal(true);
+              submitTimeline();
             }}
             className="p-2 bg-green-500 text-white rounded"
           >
