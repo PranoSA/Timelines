@@ -1,3 +1,8 @@
+/*
+Here We Need another TimelineView component but 
+you can not edit any of the timelines -
+however, you can copy it to your saved timelines
+*/
 /**
  *
  * This will be an open timeline
@@ -17,7 +22,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 
 import queryClient from '@/queries/queryClient';
 import { useSavedTimelines, useSavedTimelineById } from '@/queries/saved';
-import TimelineManager from '@/components/open_timeline/TimelineManager';
+import TimelineManager from '@/components/shared_timeline/TimelineManager';
 
 //SessionProvider
 import {

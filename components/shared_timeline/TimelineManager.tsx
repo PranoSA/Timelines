@@ -101,10 +101,6 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
     return published;
   };
 
-  //const add timeline
-  const [addingTimeline, setAddingTimeline] = useState(false);
-  const [addingEvent, setAddingEvent] = useState(false);
-
   const [selectedEvent, setSelectedEvent] = useState<TimeEvent | null>(null);
 
   //Form State FOr Adding a Timeline
@@ -364,22 +360,22 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
     }));
   };
 
-  const addTimeline = () => {
-    const newTimeline: TimeLine = {
-      title: newTimelineTitle,
-      description: newTimelineDescription,
-      events: [],
-      shown: true,
+  const addEventToTimeline = (timelineIndex: number) => {
+    if (newEventYear === '') return;
+    const newEvent: TimeEvent = {
+      title: newEventTitle,
+      description: newEventDescription,
+      year: newEventYear,
     };
+    const newTimelines = [...state.timelines];
+    newTimelines[timelineIndex].events.push(newEvent);
     setState((prevState) => ({
       ...prevState,
-      timelines: [...prevState.timelines, newTimeline],
+      timelines: newTimelines,
     }));
-    setNewTimelineTitle('');
-    setNewTimelineDescription('');
-
-    //close the add timeline form
-    setAddingTimeline(false);
+    setNewEventTitle('');
+    setNewEventDescription('');
+    setNewEventYear('');
   };
 
   const handleYearRangeChange = (startYear: number, endYear: number) => {
@@ -435,104 +431,9 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
     a.click();
   };
 
-  //load a json file and set the state to the json file
-  const loadState = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fileReader = new FileReader();
-    fileReader.onload = (e) => {
-      if (!e.target) return;
-      const result = e.target.result;
-      if (typeof result !== 'string') return;
-      const json = JSON.parse(result);
-
-      //this is the timelines, not the whole state
-      const new_state = {
-        ...state,
-        timelines: json.timelines,
-      };
-
-      setState(new_state);
-    };
-    fileReader.readAsText(file);
-    //set to multiple timelines
-    setState((prevState) => ({
-      ...prevState,
-      show_multiple_timelines: true,
-      current_timeline: null,
-    }));
-  };
-
-  //load state add will add the timelines to the current timelines
-  const loadStateAdd = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fileReader = new FileReader();
-    fileReader.onload = (e) => {
-      if (!e.target) return;
-      const result = e.target.result;
-      if (typeof result !== 'string') return;
-      const json = JSON.parse(result);
-
-      //this is the timelines, not the whole state
-
-      //check if a timeline with the same title already exists
-      //and then show the user a message that the timeline already exists
-      //and exit
-      const timeline_titles = state.timelines.map((timeline) => timeline.title);
-
-      const new_timelines = json.timelines.filter(
-        (timeline: TimeLine) => !timeline_titles.includes(timeline.title)
-      );
-
-      if (new_timelines.length === 0) {
-        alert('All timelines already exist');
-        return;
-      }
-
-      const new_state = {
-        ...state,
-        timelines: [...state.timelines, ...json.timelines],
-      };
-
-      setState(new_state);
-    };
-    fileReader.readAsText(file);
-    //set to multiple timelines
-    setState((prevState) => ({
-      ...prevState,
-      show_multiple_timelines: true,
-      current_timeline: null,
-    }));
-  };
-
   return (
-    <div className="p-4 flex flex-row flex-wrap ">
+    <div className="p-4 flex flex-row flex-wrap">
       {/* Modal for searching published timelines */}
-      {!showSearchModal ? (
-        <div className="flex w-full flex-row justify-center items-center">
-          <button
-            onClick={() => setShowSearchModal(true)}
-            className="p-2 bg-blue-500 text-white rounded flex-col justify-center items-center"
-            title="Search Published Timelines By Title and Description"
-          >
-            <div className="flex flex-row justify-center items-center">
-              Search Timelines
-              <FaSearch
-                className="cursor-pointer ml-2 dark:text-white"
-                size={20}
-              />
-            </div>
-          </button>
-        </div>
-      ) : null}
-      <div className="w-full flex flex-row flex-wrap justify-center">
-        <SearchModal
-          open_modal={showSearchModal}
-          close_modal={() => setShowSearchModal(false)}
-          add_timeline={addTimelineWithTimeline}
-        />
-      </div>
 
       {/* Optoin to both download and upload a saved state*/}
       {showSubmitTimelineModal && submitTimelineModal()}
@@ -541,27 +442,11 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
           onClick={saveState}
           className="p-2 bg-blue-500 text-white rounded"
         >
-          Save State File
+          Save State
         </button>
+
         {/* This one will be for adding timelines -> not just the state*/}
-        <div className="relative">
-          <label
-            htmlFor="load-timeline"
-            className="text-black pr-3 rounded cursor-pointer dark:text-white"
-          >
-            Add Timelines:
-          </label>
-          <input id="load-timeline" type="file" onChange={loadStateAdd} />
-          <button
-            onClick={() => {
-              // setShowSubmitTimelineModal(true);
-              submitTimeline();
-            }}
-            className="p-2 bg-green-500 text-white rounded"
-          >
-            Save Timeline
-          </button>
-        </div>
+
         {/* Save the current timeline */}
       </div>
       {
@@ -599,6 +484,10 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
               <button className="p-2 bg-blue-500 text-white rounded">
                 Filter Years
               </button>
+              <FaPlus
+                className="cursor-pointer ml-2 dark:text-white"
+                size={20}
+              />
             </div>
           </>
         )
@@ -609,43 +498,7 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
           <h1 className="text-2xl font-bold mb-4">
             Showing Multiple Timelines
           </h1>
-          {addingTimeline ? (
-            <div className="mb-4 dark:text-black flex flex-col items-center space-y-4">
-              <FaTimes
-                onClick={() => setAddingTimeline(false)}
-                className="cursor-pointer ml-2 dark:text-white"
-                size={30}
-              />
-              <input
-                type="text"
-                placeholder="Timeline Title"
-                value={newTimelineTitle}
-                onChange={(e) => setNewTimelineTitle(e.target.value)}
-                className="p-2 border rounded w-64"
-              />
-              <textarea
-                placeholder="Timeline Description"
-                value={newTimelineDescription}
-                onChange={(e) => setNewTimelineDescription(e.target.value)}
-                className="p-2 border rounded w-64 h-32 resize-none"
-              ></textarea>
-              <button
-                onClick={addTimeline}
-                className="p-2 bg-green-500 text-white rounded w-64"
-              >
-                Add Timeline
-              </button>
-            </div>
-          ) : (
-            <div className="mb-4 dark:text-black">
-              <button
-                onClick={() => setAddingTimeline(true)}
-                className="p-2 bg-green-500 text-white rounded"
-              >
-                Add Timeline
-              </button>
-            </div>
-          )}
+
           <TimelineComponent
             timelines={state.timelines}
             onSelectEvent={setSelectedEvent}
@@ -704,21 +557,6 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
                   />
                 </div>
                 {/*Write the Add Event Button Here instead*/}
-                <div className="mb-4 dark:text-black flex flex-row rounded bg-green-500">
-                  <button
-                    title="Add Event To Timeline"
-                    onClick={() => setAddingEvent(true)}
-                    className="p-2 text-black rounded font-bold text-2xl "
-                  >
-                    Add Event
-                  </button>
-                  <FaPlus
-                    className="cursor-pointer ml-2 dark:text-white"
-                    size={20}
-                    onClick={() => setAddingEvent(true)}
-                    title="Add Event To Timeline"
-                  />
-                </div>
               </div>
               <div className="flex space-x-4">
                 {
@@ -885,7 +723,7 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
 
           {state.current_timeline && (
             <div className="w-full">
-              : (<div className="mb-4 dark:text-black"></div>
+              <div className="mb-4 dark:text-black"></div>
               )
               <TimelineComponent
                 timelines={[state.current_timeline]}
