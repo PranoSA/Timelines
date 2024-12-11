@@ -15,7 +15,13 @@ import { useSaveTimelineMutation } from '../queries/saved';
 
 import { useSearchPublishedTimelines } from '@/queries/publish';
 
+//dorn arro wfrom Fa
+import { FaArrowDown, FaArrowUp } from 'react-icons/fa';
+
 const TimelineManager: React.FC = () => {
+  //drop down to upload / download timelines
+  const [showFilePanel, setShowFilePanel] = useState(false);
+
   const [state, setState] = useState<ApplicationState>({
     zoomed_in: false,
     show_multiple_timelines: true, // Start in multiple timeline mode
@@ -468,56 +474,96 @@ const TimelineManager: React.FC = () => {
           setShowSubmitTimelineModal={setShowSubmitTimelineModal}
         />
       )}
-      <div className="flex flex-col space-y-4 w-full p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-        <div className="flex justify-around">
-          <button
-            onClick={saveState}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Save State File
-          </button>
-          <div className="relative flex items-center">
-            <label
-              htmlFor="load-state"
-              className="text-black dark:text-white pr-3 cursor-pointer"
-            >
-              Load State:
-            </label>
-            <input
-              id="load-state"
-              type="file"
-              onChange={loadState}
-              className="hidden"
+      {showFilePanel ? (
+        <div className="flex flex-col items-center space-y-4 w-full p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+          <div className="flex justify-between items-center w-full mb-4">
+            <h1 className="text-xl font-bold text-center w-full">
+              Manage Timelines
+            </h1>
+            <FaArrowUp
+              size={20}
+              onClick={() => setShowFilePanel(false)}
+              className="cursor-pointer dark:text-white"
             />
-            <label
-              htmlFor="load-state"
-              className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600"
-            >
-              Choose File
-            </label>
+          </div>
+          <div className="flex flex-row items-center space-y-4 w-full">
+            <div className="flex flex-col items-center w-1/3">
+              <label
+                htmlFor="load-timeline"
+                className="text-black dark:text-white pr-3 cursor-pointer mb-2"
+              >
+                Add Timelines:
+              </label>
+              <input
+                id="load-timeline"
+                type="file"
+                onChange={loadStateAdd}
+                className="hidden"
+              />
+              <label
+                htmlFor="load-timeline"
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600"
+              >
+                Choose File
+              </label>
+            </div>
+            <div className="flex flex-col items-center w-1/3">
+              <label
+                htmlFor="save-state"
+                className="text-black dark:text-white pr-3 cursor-pointer"
+              >
+                Save State:
+              </label>
+              <button
+                onClick={saveState}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Save State File
+              </button>
+            </div>
+            <div className="flex flex-col items-center w-1/3">
+              <div className="flex flex-row items-center w-full">
+                <label
+                  htmlFor="load-state"
+                  className="text-black dark:text-white pr-3 cursor-pointer mb-2"
+                >
+                  Load State:
+                </label>
+                <input
+                  id="load-state"
+                  type="file"
+                  onChange={loadState}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="load-state"
+                  className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600"
+                >
+                  Choose File
+                </label>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex justify-around">
-          <div className="relative flex items-center">
-            <label
-              htmlFor="load-timeline"
-              className="text-black dark:text-white pr-3 cursor-pointer"
-            >
-              Add Timelines:
-            </label>
-            <input
-              id="load-timeline"
-              type="file"
-              onChange={loadStateAdd}
-              className="hidden"
-            />
-            <label
-              htmlFor="load-timeline"
-              className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600"
-            >
-              Choose File
-            </label>
-          </div>
+      ) : (
+        <div className="w-full flex flex-col items-center">
+          <h1 className="text-xl font-bold text-center mb-2">
+            Manage Timelines
+          </h1>
+          <p className="text-center mb-4">
+            Open the panel to access options for uploading or downloading
+            timeline states.
+          </p>
+          <FaArrowDown
+            size={20}
+            onClick={() => setShowFilePanel(true)}
+            className="cursor-pointer dark:text-white"
+          />
+        </div>
+      )}
+      <div className="flex m-4 flex-col space-y-4 w-full p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"></div>
+      <div className="w-full items-center flex justify-around">
+        <div className="w-1/2 items-center">
           <button
             onClick={() => {
               setShowSubmitTimelineModal(true);
@@ -527,32 +573,33 @@ const TimelineManager: React.FC = () => {
             Save Timeline
           </button>
         </div>
-      </div>
-
-      {/* Search Modal */}
-      {!showSearchModal ? (
-        <div className="flex w-full flex-row justify-center items-center p-2">
-          <button
-            onClick={() => setShowSearchModal(true)}
-            className="p-2 bg-blue-500 text-white rounded flex-col justify-center items-center"
-            title="Search Published Timelines By Title and Description"
-          >
-            <div className="flex flex-row justify-center items-center">
-              Search Timelines
-              <FaSearch
-                className="cursor-pointer ml-2 dark:text-white"
-                size={20}
-              />
+        <div className="w-1/2 items-center">
+          {/* Search Modal */}
+          {!showSearchModal ? (
+            <div className="flex w-full flex-row justify-center items-center p-2">
+              <button
+                onClick={() => setShowSearchModal(true)}
+                className="p-2 bg-blue-500 text-white rounded flex-col justify-center items-center"
+                title="Search Published Timelines By Title and Description"
+              >
+                <div className="flex flex-row justify-center items-center">
+                  Search Timelines
+                  <FaSearch
+                    className="cursor-pointer ml-2 dark:text-white"
+                    size={20}
+                  />
+                </div>
+              </button>
             </div>
-          </button>
+          ) : null}
+          <div className="w-full flex flex-row flex-wrap justify-center">
+            <SearchModal
+              open_modal={showSearchModal}
+              close_modal={() => setShowSearchModal(false)}
+              add_timeline={addTimelineWithTimeline}
+            />
+          </div>
         </div>
-      ) : null}
-      <div className="w-full flex flex-row flex-wrap justify-center">
-        <SearchModal
-          open_modal={showSearchModal}
-          close_modal={() => setShowSearchModal(false)}
-          add_timeline={addTimelineWithTimeline}
-        />
       </div>
 
       {
@@ -567,6 +614,10 @@ const TimelineManager: React.FC = () => {
               <button className="p-2 bg-blue-500 text-white rounded">
                 Stop Filtering Years{' '}
               </button>
+              <FaArrowUp
+                size={20}
+                className="cursor-pointer ml-2 dark:text-white"
+              />
             </div>
             <h1 className="w-full text-center"> Filter Slider </h1>
             <div className="w-full">
@@ -586,6 +637,10 @@ const TimelineManager: React.FC = () => {
               <button className="p-2 bg-blue-500 text-white rounded">
                 Filter Years
               </button>
+              <FaArrowDown
+                className="cursor-pointer ml-2 dark:text-white"
+                size={20}
+              />
             </div>
           </>
         )
@@ -975,40 +1030,52 @@ const SearchModal: React.FC<SearchModalProps> = ({
   if (!open_modal) return null;
 
   return (
-    <div className="modal">
-      <input
-        type="text"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Search for timelines"
-        className="p-2 border rounded w-full mb-4"
-      />
-      {isLoading && <p>Loading...</p>}
-      {isError && <p>Error: {error.message}</p>}
-      <ul>
-        {timelines?.map((timeline) => (
-          <li
-            key={timeline.id}
-            onClick={() =>
-              add_timeline({
-                title: timeline.title,
-                description: timeline.description,
-                events: timeline.events,
-                shown: true,
-              })
-            }
-            className="cursor-pointer p-2 border-b hover:bg-gray-200"
-          >
-            {timeline.title}
-          </li>
-        ))}
-      </ul>
-      <button
-        onClick={close_modal}
-        className="mt-4 p-2 bg-red-500 text-white rounded"
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+      onClick={close_modal}
+    >
+      <div
+        className="bg-white dark:bg-gray-800 w-full max-w-lg p-6 rounded-lg shadow-lg z-50"
+        onClick={(e) => e.stopPropagation()}
       >
-        Close
-      </button>
+        <h1 className="text-2xl font-bold mb-4">Search Timelines</h1>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search for timelines"
+          className="p-2 border rounded w-full mb-4"
+        />
+        {isLoading && <p>Loading...</p>}
+        {isError && <p>Error: {error.message}</p>}
+        <ul>
+          {timelines?.map((timeline) => (
+            <li
+              key={timeline.id}
+              onClick={() =>
+                add_timeline({
+                  title: timeline.title,
+                  description: timeline.description,
+                  events: timeline.events,
+                  shown: true,
+                })
+              }
+              className="cursor-pointer p-2 border-b hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              {timeline.title}
+              <p>{timeline.description}</p>
+              {/* Number of Events Here */}
+              <p> Number of Events: {timeline.events.length} </p>
+            </li>
+          ))}
+        </ul>
+        <button
+          onClick={close_modal}
+          className="mt-4 p-2 bg-red-500 text-white rounded hover:bg-red-600"
+        >
+          Close
+        </button>
+      </div>
     </div>
   );
 };

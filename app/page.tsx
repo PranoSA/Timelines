@@ -70,13 +70,22 @@ const Home: React.FC = () => {
   if (!session) {
     //return a signing button or return to "Home" option
     return (
-      <div className="w-full h-full flex justify-center items-center">
-        <div className="w-1/2 justify-center items-center flex flex-col">
-          <button onClick={() => signIn()}>Sign In</button>
-        </div>
-        <div className="w-1/2 justify-center items-center flex flex-col">
-          <Link href="/">
-            <button>Home</button>
+      <div className="w-full min-h-screen flex justify-center items-center bg-gray-100 dark:bg-gray-900 ">
+        <div className="w-1/2 flex h-full flex-col justify-center items-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+          <h1 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-gray-200">
+            Welcome
+          </h1>
+          <button
+            onClick={() => signIn()}
+            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
+          >
+            Sign In
+          </button>
+          {/*Make  New One Without Signing -> Linkto /new*/}
+          <Link href="/new">
+            <button className="mt-4 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75">
+              Make New Timeline Without Signing in
+            </button>
           </Link>
         </div>
       </div>
