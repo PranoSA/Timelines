@@ -463,6 +463,23 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
     }));
   };
 
+  const addEventToTimeline = (timelineIndex: number) => {
+    if (newEventYear === '') return;
+    const newEvent: TimeEvent = {
+      title: newEventTitle,
+      description: newEventDescription,
+      year: newEventYear,
+    };
+    const newTimelines = [...state.timelines];
+    newTimelines[timelineIndex].events.push(newEvent);
+    setState((prevState) => ({
+      ...prevState,
+      timelines: newTimelines,
+    }));
+    setNewEventTitle('');
+    setNewEventDescription('');
+    setNewEventYear('');
+  };
   //load state add will add the timelines to the current timelines
   const loadStateAdd = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -740,17 +757,6 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
                           : event.description,
                     },
                     { value: event.year },
-                    {
-                      value: 'Delete Event',
-                      onClick: () => {
-                        console.log('delete event');
-                        //delete the event
-                        const newEvents = currentEvents.filter(
-                          (e) => e !== event
-                        );
-                        setCurrentEvents(newEvents);
-                      },
-                    },
                   ]) || []),
                   //empty row
                 ]}
@@ -766,6 +772,26 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
                     description: (row[1]?.value as string) ?? '',
                     year: (row[2]?.value as number) || 0,
                   }));
+
+                  //if any difference -> set the current events
+                  //if no difference -> do nothing
+
+                  //check if newEvents is the same as currentEvents
+                  //if same - return
+                  if (
+                    newEvents.length === currentEvents.length &&
+                    newEvents.every((event, index) => {
+                      const currentEvent = currentEvents[index];
+                      return (
+                        event.title === currentEvent.title &&
+                        event.description === currentEvent.description &&
+                        event.year === currentEvent.year
+                      );
+                    })
+                  ) {
+                    return;
+                  }
+
                   console.log('newEvents: ', newEvents);
                   setCurrentEvents(newEvents);
                 }}
@@ -823,6 +849,9 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
                     ...state.current_timeline!,
                     events: currentEvents,
                   });
+
+                  //close the add event form
+                  setAddingEvent(false);
                 }}
                 className="p-2 bg-green-500 text-white rounded"
               >
@@ -885,8 +914,78 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
 
           {state.current_timeline && (
             <div className="w-full">
-              : (<div className="mb-4 dark:text-black"></div>
-              )
+              : (<div className="mb-4 dark:text-black"></div>)
+              {addingEvent ? (
+                <div className="mb-8 w-full dark:text-black flex flex-col items-center space-y-4">
+                  <div className="flex flex-row">
+                    <h2 className="text-md font-bold mb-2">Adding New Event</h2>
+                    <FaTimes
+                      onClick={() => setAddingEvent(false)}
+                      className="cursor-pointer ml-2 dark:text-white"
+                      size={30}
+                      title="Quit Adding Event"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Event Title"
+                    value={newEventTitle}
+                    onChange={(e) => setNewEventTitle(e.target.value)}
+                    className="p-2 border rounded w-64"
+                    ref={titleEventInputRef}
+                    //add listener when focused -> "enter" focuses the description
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        descriptionEventInputRef.current?.focus();
+                      }
+                    }}
+                  />
+                  <textarea
+                    //type="text"
+                    placeholder="Event Description"
+                    value={newEventDescription}
+                    onChange={(e) => setNewEventDescription(e.target.value)}
+                    className="p-2 border rounded w-64"
+                    ref={descriptionEventInputRef}
+                    //add listener when focused -> "enter" focuses the year
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        yearEventInputRef.current?.focus();
+                      }
+                    }}
+                  >
+                    {' '}
+                  </textarea>
+                  <input
+                    type="number"
+                    placeholder="Event Year"
+                    value={newEventYear}
+                    onChange={(e) => setNewEventYear(Number(e.target.value))}
+                    className="p-2 border rounded w-64"
+                    ref={yearEventInputRef}
+                    //add listener -> event "enter" adds the event
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        addEventToTimeline(
+                          state.timelines.indexOf(state.current_timeline!)
+                        );
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() =>
+                      addEventToTimeline(
+                        state.timelines.indexOf(state.current_timeline!)
+                      )
+                    }
+                    className="p-2 bg-green-500 text-white rounded w-64"
+                  >
+                    Add Event
+                  </button>
+                </div>
+              ) : (
+                <div className="mb-4 dark:text-black"></div>
+              )}
               <TimelineComponent
                 timelines={[state.current_timeline]}
                 onSelectEvent={setSelectedEvent}
