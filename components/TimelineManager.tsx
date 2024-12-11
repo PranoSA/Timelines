@@ -9,7 +9,7 @@ import {
 import TimelineComponent from './Timeline';
 import EventDetails from './EventDetails';
 import YearSlider from './YearSlider';
-import { FaPen, FaPlus, FaTimes } from 'react-icons/fa';
+import { FaPen, FaPlus, FaTimes, FaSearch } from 'react-icons/fa';
 import { cursorTo } from 'readline';
 import { useSaveTimelineMutation } from '../queries/saved';
 
@@ -132,6 +132,8 @@ const TimelineManager: React.FC = () => {
   const [sliderStartYear, setSliderStartYear] = useState<number>(500);
   const [sliderEndYear, setSliderEndYear] = useState<number>(2000);
 
+  const [showSearchModal, setShowSearchModal] = useState(false);
+
   //set the year to maxEventYear and minEventYear if the filterYears is set to false
   useEffect(() => {
     if (!filterYears) {
@@ -142,6 +144,13 @@ const TimelineManager: React.FC = () => {
 
   //get the current year
   const todaysYear = new Date().getFullYear();
+
+  const addTimelineWithTimeline = (timeline: TimeLine) => {
+    setState((prevState) => ({
+      ...prevState,
+      timelines: [...prevState.timelines, timeline],
+    }));
+  };
 
   const onEditTimelineNew = (timeline: TimeLine) => {
     //same thing -> except you use the current timeline
@@ -453,43 +462,99 @@ const TimelineManager: React.FC = () => {
   return (
     <div className="p-4 flex flex-row flex-wrap">
       {/* Optoin to both download and upload a saved state*/}
-      {showSubmitTimelineModal && submitTimelineModal()}
-      <div className="flex space-x-4 w-full justify-around p-4">
-        <button
-          onClick={saveState}
-          className="p-2 bg-blue-500 text-white rounded"
-        >
-          Save State
-        </button>
-        <div className="relative">
-          <label
-            htmlFor="load-state"
-            className="text-black pr-3 rounded cursor-pointer dark:text-white"
+      {showSubmitTimelineModal && (
+        <SubmitTimelineModal
+          timelines={state.timelines}
+          setShowSubmitTimelineModal={setShowSubmitTimelineModal}
+        />
+      )}
+      <div className="flex flex-col space-y-4 w-full p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div className="flex justify-around">
+          <button
+            onClick={saveState}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            Load State :
-          </label>
-          <input id="load-state" type="file" onChange={loadState} />
+            Save State File
+          </button>
+          <div className="relative flex items-center">
+            <label
+              htmlFor="load-state"
+              className="text-black dark:text-white pr-3 cursor-pointer"
+            >
+              Load State:
+            </label>
+            <input
+              id="load-state"
+              type="file"
+              onChange={loadState}
+              className="hidden"
+            />
+            <label
+              htmlFor="load-state"
+              className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600"
+            >
+              Choose File
+            </label>
+          </div>
         </div>
-        {/* This one will be for adding timelines -> not just the state*/}
-        <div className="relative">
-          <label
-            htmlFor="load-timeline"
-            className="text-black pr-3 rounded cursor-pointer dark:text-white"
-          >
-            Add Timelines:
-          </label>
-          <input id="load-timeline" type="file" onChange={loadStateAdd} />
+        <div className="flex justify-around">
+          <div className="relative flex items-center">
+            <label
+              htmlFor="load-timeline"
+              className="text-black dark:text-white pr-3 cursor-pointer"
+            >
+              Add Timelines:
+            </label>
+            <input
+              id="load-timeline"
+              type="file"
+              onChange={loadStateAdd}
+              className="hidden"
+            />
+            <label
+              htmlFor="load-timeline"
+              className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600"
+            >
+              Choose File
+            </label>
+          </div>
           <button
             onClick={() => {
               setShowSubmitTimelineModal(true);
             }}
-            className="p-2 bg-green-500 text-white rounded"
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           >
             Save Timeline
           </button>
         </div>
-        {/* Save the current timeline */}
       </div>
+
+      {/* Search Modal */}
+      {!showSearchModal ? (
+        <div className="flex w-full flex-row justify-center items-center p-2">
+          <button
+            onClick={() => setShowSearchModal(true)}
+            className="p-2 bg-blue-500 text-white rounded flex-col justify-center items-center"
+            title="Search Published Timelines By Title and Description"
+          >
+            <div className="flex flex-row justify-center items-center">
+              Search Timelines
+              <FaSearch
+                className="cursor-pointer ml-2 dark:text-white"
+                size={20}
+              />
+            </div>
+          </button>
+        </div>
+      ) : null}
+      <div className="w-full flex flex-row flex-wrap justify-center">
+        <SearchModal
+          open_modal={showSearchModal}
+          close_modal={() => setShowSearchModal(false)}
+          add_timeline={addTimelineWithTimeline}
+        />
+      </div>
+
       {
         //filter slider if filterYears is set to true
         filterYears ? (
@@ -501,10 +566,6 @@ const TimelineManager: React.FC = () => {
             >
               <button className="p-2 bg-blue-500 text-white rounded">
                 Stop Filtering Years{' '}
-                <FaTimes
-                  className="cursor-pointer ml-2 dark:text-white"
-                  size={20}
-                />
               </button>
             </div>
             <h1 className="w-full text-center"> Filter Slider </h1>
@@ -525,10 +586,6 @@ const TimelineManager: React.FC = () => {
               <button className="p-2 bg-blue-500 text-white rounded">
                 Filter Years
               </button>
-              <FaPlus
-                className="cursor-pointer ml-2 dark:text-white"
-                size={20}
-              />
             </div>
           </>
         )
@@ -536,9 +593,6 @@ const TimelineManager: React.FC = () => {
 
       {state.show_multiple_timelines ? (
         <div className="w-full flex flex-col items-center">
-          <h1 className="text-2xl font-bold mb-4">
-            Showing Multiple Timelines
-          </h1>
           {addingTimeline ? (
             <div className="mb-4 dark:text-black flex flex-col items-center space-y-4">
               <FaTimes
@@ -844,26 +898,43 @@ const SubmitTimelineModal: React.FC<{
 
   return (
     <div
-      className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50"
+      className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-40"
       onClick={() => setShowSubmitTimelineModal(false)}
     >
       <div
-        className="bg-white w-1/2 h-1/2"
+        className="bg-white dark:bg-gray-800 w-full max-w-lg p-6 rounded-lg shadow-lg z-50"
         onClick={(e) => {
           e.stopPropagation();
         }}
       >
-        <h1>Submit Timeline</h1>
+        <h1 className="text-2xl font-bold mb-4">Submit Timeline</h1>
         <input
           type="text"
           value={submittedTimelineName}
           onChange={(e) => setSubmittedTimelineName(e.target.value)}
+          placeholder="Timeline Name"
+          className="w-full p-2 mb-4 border rounded"
         />
         <textarea
           value={submittedTimelineDescription}
           onChange={(e) => setSubmittedTimelineDescription(e.target.value)}
+          placeholder="Timeline Description"
+          className="w-full p-2 mb-4 border rounded h-32 resize-none"
         ></textarea>
-        <button onClick={submitTimeline}>Submit</button>
+        <div className="flex justify-end space-x-4">
+          <button
+            onClick={() => setShowSubmitTimelineModal(false)}
+            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={submitTimeline}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Submit
+          </button>
+        </div>
       </div>
     </div>
   );
