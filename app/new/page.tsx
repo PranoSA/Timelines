@@ -48,7 +48,7 @@ function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="p-8">
-        <TimelineManager />
+        <TimelineManager initialTimeline={null} />
       </main>
     </div>
   );
