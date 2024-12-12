@@ -76,10 +76,10 @@ type ApplicationStateEditing = {
   current_timeline: TimeLine | null;
   start_year_zoomed: number;
   end_year_zoomed: number;
-  title: string;
-  description: string;
+  title: string | null;
+  description: string | null;
   timelines: TimeLine[];
-  user_id: string;
+  user_id: string | null;
 };
 
 type TimelineAPI = {
