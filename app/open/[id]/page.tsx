@@ -17,7 +17,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 
 import queryClient from '@/queries/queryClient';
 import { useSavedTimelines, useSavedTimelineById } from '@/queries/saved';
-import TimelineManager from '@/components/open_timeline/TimelineManager';
+import TimelineManager from '@/components/TimelineManager';
 
 //SessionProvider
 import {

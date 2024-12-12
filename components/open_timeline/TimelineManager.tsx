@@ -91,9 +91,9 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
     //make a InsertionTimeLine
     const insertionTimeline: FetchedTimeLine = {
       id: id,
-      user_id: state.user_id,
-      title: state.title,
-      description: state.description,
+      user_id: state.user_id || '',
+      title: state.title || '',
+      description: state.description || '',
       timelines: state.timelines,
     };
 
@@ -163,7 +163,6 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
 
   useEffect(() => {
     if (editingTimeline) {
-      console.log('editing timeline: ', editingTimeline);
       setCurrentEvents(editingTimeline.events);
     }
   }, [editingTimeline]);
@@ -238,21 +237,11 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
         t.title === state.current_timeline?.title
     );
 
-    console.log('current timeline: ', state.current_timeline);
-
-    console.log('current timelines ', state.timelines);
-
-    console.log('index of timeline: ', index);
-
     if (index === -1) return;
-
-    console.log('timeline to update: ', timeline);
 
     const newTimelines = [...state.timelines];
 
     newTimelines[index] = timeline;
-
-    console.log('new timelines after update: ', newTimelines);
 
     setState((prevState) => ({
       ...prevState,
@@ -261,12 +250,8 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
   };
 
   const onEditTimeline = (timeline: TimeLine) => {
-    console.log('editing timeline', timeline);
-
     //find the index of the timeline
     const index = state.timelines.indexOf(timeline);
-
-    console.log('index of timeline: ', index);
 
     //if the index is not found, return
     if (index === -1) return;
@@ -274,13 +259,7 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
     //update the timeline
     const newTimelines = [...state.timelines];
 
-    console.log('new timelines: ', newTimelines);
-
-    console.log('timeline to update: ', timeline);
-
     newTimelines[index] = timeline;
-
-    console.log('new timelines after update: ', newTimelines);
 
     setState((prevState) => ({
       ...prevState,

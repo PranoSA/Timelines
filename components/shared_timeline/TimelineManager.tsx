@@ -61,23 +61,17 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
 
   const [showSubmitTimelineModal, setShowSubmitTimelineModal] = useState(false);
 
-  const saveTimeline = useSaveTimelineMutation();
-
   const editTimeline = useEditTimelineMutation();
-
-  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const submitTimeline = async () => {
     //make a InsertionTimeLine
     const insertionTimeline: FetchedTimeLine = {
       id: id,
-      user_id: state.user_id,
-      title: state.title,
-      description: state.description,
+      user_id: state.user_id || '',
+      title: state.title || '',
+      description: state.description || '',
       timelines: state.timelines,
     };
-
-    console.log('insertionTimeline: ', insertionTimeline);
 
     //make a new timeline
     const submit = await editTimeline.mutateAsync(insertionTimeline);
@@ -130,16 +124,11 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
   const editTitleRef = React.useRef<HTMLInputElement>(null);
   const editDescriptionRef = React.useRef<HTMLTextAreaElement>(null);
 
-  const titleEventInputRef = useRef<HTMLInputElement>(null);
-  const descriptionEventInputRef = useRef<HTMLTextAreaElement>(null);
-  const yearEventInputRef = useRef<HTMLInputElement>(null);
-
   //everytime the editing timeline changes -> set current events
   const [currentEvents, setCurrentEvents] = useState<TimeEvent[]>([]);
 
   useEffect(() => {
     if (editingTimeline) {
-      console.log('editing timeline: ', editingTimeline);
       setCurrentEvents(editingTimeline.events);
     }
   }, [editingTimeline]);
@@ -214,21 +203,11 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
         t.title === state.current_timeline?.title
     );
 
-    console.log('current timeline: ', state.current_timeline);
-
-    console.log('current timelines ', state.timelines);
-
-    console.log('index of timeline: ', index);
-
     if (index === -1) return;
-
-    console.log('timeline to update: ', timeline);
 
     const newTimelines = [...state.timelines];
 
     newTimelines[index] = timeline;
-
-    console.log('new timelines after update: ', newTimelines);
 
     setState((prevState) => ({
       ...prevState,
@@ -237,12 +216,8 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
   };
 
   const onEditTimeline = (timeline: TimeLine) => {
-    console.log('editing timeline', timeline);
-
     //find the index of the timeline
     const index = state.timelines.indexOf(timeline);
-
-    console.log('index of timeline: ', index);
 
     //if the index is not found, return
     if (index === -1) return;
@@ -250,13 +225,7 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
     //update the timeline
     const newTimelines = [...state.timelines];
 
-    console.log('new timelines: ', newTimelines);
-
-    console.log('timeline to update: ', timeline);
-
     newTimelines[index] = timeline;
-
-    console.log('new timelines after update: ', newTimelines);
 
     setState((prevState) => ({
       ...prevState,
@@ -287,7 +256,6 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
 
     const max_year = Math.max(...all_events.map((event) => event.year));
 
-    console.log('sliderEndYearDriven: ', max_year);
     return max_year;
   }, [state.timelines, todaysYear]);
 
@@ -322,7 +290,6 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
       return minEventYear;
     }, todaysYear - 1);
 
-    console.log('sliderStartYearDriven: ', min_year);
     return min_year;
   }, [state.timelines, todaysYear]);
 

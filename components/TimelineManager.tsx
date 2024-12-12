@@ -1,58 +1,85 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useContext } from 'react';
 import {
   ApplicationState,
   TimeLine,
   TimeEvent,
   InsertionTimeLine,
+  FetchedTimeLine,
+  ApplicationStateEditing,
 } from '../types';
 import TimelineComponent from './Timeline';
-import EventDetails from './EventDetails';
 import YearSlider from './YearSlider';
-import { FaPen, FaPlus, FaTimes, FaSearch } from 'react-icons/fa';
-import { cursorTo } from 'readline';
-import { useSaveTimelineMutation } from '../queries/saved';
 
-import { useSearchPublishedTimelines } from '@/queries/publish';
+import TimelineContext from '@/TimelineContext';
+
+import { FaPen, FaPlus, FaTimes, FaSearch } from 'react-icons/fa';
+
+import {
+  useEditTimelineMutation,
+  useSaveTimelineMutation,
+} from '../queries/saved';
+
+import YearFilterComponent from '@/components/YearFilter';
+import SearchModal from '@/components/SearchModal';
+import SubmitTimelineModal from '@/components/SubmitTimelineModal';
+import SpreadSheetComponent from '@/components/SpreadSheetComponent';
+import FileManageComponent from './FileManage';
 
 //dorn arro wfrom Fa
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa';
+import { init } from 'next/dist/compiled/webpack/webpack';
 
-const TimelineManager: React.FC = () => {
-  //drop down to upload / download timelines
-  const [showFilePanel, setShowFilePanel] = useState(false);
+type TimelineManagerProps = {
+  //saved
+  //initial timeline only applies if saved
+  initialTimeline: null | FetchedTimeLine;
+  //if initial Timeline is null -> then its a new timeline
+  //if its not null -> then its a saved timeline, which means there is
+  //initial state, there is publishability, and there is a timeline id
+  editable?: boolean;
+};
 
-  const [state, setState] = useState<ApplicationState>({
+const TimelineManager: React.FC<TimelineManagerProps> = ({
+  initialTimeline,
+  editable = true,
+}) => {
+  //everytime the editing timeline changes -> set current events
+  const [currentEvents, setCurrentEvents] = useState<TimeEvent[]>([]);
+  const { id } = useContext(TimelineContext);
+
+  const [state, setState] = useState<ApplicationStateEditing>({
     zoomed_in: false,
     show_multiple_timelines: true, // Start in multiple timeline mode
     current_timeline: null,
     start_year_zoomed: 0,
     end_year_zoomed: 0,
-    timelines: [],
+    timelines:
+      initialTimeline?.timelines.map((timeline) => ({
+        //add the shown property
+        ...timeline,
+        shown: true,
+      })) || [],
+    title: initialTimeline?.title || '',
+    description: initialTimeline?.description || '',
+    user_id: initialTimeline?.user_id || '',
   });
-
-  const [submittedTimelineName, setSubmittedTimelineName] = useState('');
-  const [submittedTimelineDescription, setSubmittedTimelineDescription] =
-    useState('');
-
-  const [openSearchModal, setOpenSearchModal] = useState(false);
 
   const [showSubmitTimelineModal, setShowSubmitTimelineModal] = useState(false);
 
-  const saveTimeline = useSaveTimelineMutation();
+  const editTimeline = useEditTimelineMutation();
 
   const submitTimeline = async () => {
     //make a InsertionTimeLine
-    const insertionTimeline: InsertionTimeLine = {
-      title: submittedTimelineName,
-      description: submittedTimelineDescription,
+    const insertionTimeline: FetchedTimeLine = {
+      id: id,
+      user_id: state.user_id || '',
+      title: state.title || '',
+      description: state.description || '',
       timelines: state.timelines,
     };
-
-    console.log('insertionTimeline: ', insertionTimeline);
-
     //make a new timeline
-    const submit = await saveTimeline.mutateAsync(insertionTimeline);
+    const submit = await editTimeline.mutateAsync(insertionTimeline);
 
     return submit;
   };
@@ -101,34 +128,18 @@ const TimelineManager: React.FC = () => {
     }));
   };
 
-  //modal that blackens out the background and calls submitTimeline
-  const submitTimelineModal = () => {
-    return (
-      <div
-        className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50"
-        onClick={() => setShowSubmitTimelineModal(false)}
-      >
-        <div
-          className="bg-white w-1/2 h-1/2"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <h1>Submit Timeline</h1>
-          <input
-            type="text"
-            value={submittedTimelineName}
-            onChange={(e) => setSubmittedTimelineName(e.target.value)}
-          />
-          <textarea
-            value={submittedTimelineDescription}
-            onChange={(e) => setSubmittedTimelineDescription(e.target.value)}
-          ></textarea>
-          <button onClick={submitTimeline}>Submit</button>
-        </div>
-      </div>
-    );
-  };
+  useEffect(() => {
+    if (editingTimeline) {
+      setCurrentEvents(editingTimeline.events);
+    }
+  }, [editingTimeline]);
+
+  //every time state.current_timeline changes -> set current events
+  useEffect(() => {
+    if (state.current_timeline) {
+      setCurrentEvents(state.current_timeline.events);
+    }
+  }, [state.current_timeline]);
 
   // This is for the range for the slider to set
   // it should be a subset of the range of all events
@@ -166,21 +177,11 @@ const TimelineManager: React.FC = () => {
         t.title === state.current_timeline?.title
     );
 
-    console.log('current timeline: ', state.current_timeline);
-
-    console.log('current timelines ', state.timelines);
-
-    console.log('index of timeline: ', index);
-
     if (index === -1) return;
-
-    console.log('timeline to update: ', timeline);
 
     const newTimelines = [...state.timelines];
 
     newTimelines[index] = timeline;
-
-    console.log('new timelines after update: ', newTimelines);
 
     setState((prevState) => ({
       ...prevState,
@@ -189,12 +190,8 @@ const TimelineManager: React.FC = () => {
   };
 
   const onEditTimeline = (timeline: TimeLine) => {
-    console.log('editing timeline', timeline);
-
     //find the index of the timeline
     const index = state.timelines.indexOf(timeline);
-
-    console.log('index of timeline: ', index);
 
     //if the index is not found, return
     if (index === -1) return;
@@ -202,13 +199,7 @@ const TimelineManager: React.FC = () => {
     //update the timeline
     const newTimelines = [...state.timelines];
 
-    console.log('new timelines: ', newTimelines);
-
-    console.log('timeline to update: ', timeline);
-
     newTimelines[index] = timeline;
-
-    console.log('new timelines after update: ', newTimelines);
 
     setState((prevState) => ({
       ...prevState,
@@ -239,7 +230,6 @@ const TimelineManager: React.FC = () => {
 
     const max_year = Math.max(...all_events.map((event) => event.year));
 
-    console.log('sliderEndYearDriven: ', max_year);
     return max_year;
   }, [state.timelines, todaysYear]);
 
@@ -274,7 +264,6 @@ const TimelineManager: React.FC = () => {
       return minEventYear;
     }, todaysYear - 1);
 
-    console.log('sliderStartYearDriven: ', min_year);
     return min_year;
   }, [state.timelines, todaysYear]);
 
@@ -368,7 +357,6 @@ const TimelineManager: React.FC = () => {
   }, [state.timelines]);
 
   const handleSliderYearChange = (startYear: number, endYear: number) => {
-    console.log('slider year change', startYear, endYear);
     //setSliderStartYear(startYear);
     //setSliderEndYear(endYear);
     setEndYear(endYear);
@@ -474,103 +462,29 @@ const TimelineManager: React.FC = () => {
           setShowSubmitTimelineModal={setShowSubmitTimelineModal}
         />
       )}
-      {showFilePanel ? (
-        <div className="flex flex-col items-center space-y-4 w-full p-4 bg-white dark:bg-gray-800 rounded-lg">
-          <div className="flex justify-between items-center w-full mb-4">
-            <h1 className="text-xl font-bold text-center w-full">
-              Manage Timelines
-            </h1>
-            <FaArrowUp
-              size={20}
-              onClick={() => setShowFilePanel(false)}
-              className="cursor-pointer dark:text-white"
-            />
-          </div>
-          <div className="flex flex-row items-center space-y-4 w-full">
-            <div className="flex flex-col items-center w-1/3">
-              <label
-                htmlFor="load-timeline"
-                className="text-black dark:text-white pr-3 cursor-pointer mb-2"
-              >
-                Add Timelines:
-              </label>
-              <input
-                id="load-timeline"
-                type="file"
-                onChange={loadStateAdd}
-                className="hidden"
-              />
-              <label
-                htmlFor="load-timeline"
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600"
-              >
-                Choose File
-              </label>
-            </div>
-            <div className="flex flex-col items-center w-1/3">
-              <label
-                htmlFor="save-state"
-                className="text-black dark:text-white pr-3 cursor-pointer"
-              >
-                Save State:
-              </label>
-              <button
-                onClick={saveState}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Save State File
-              </button>
-            </div>
-            <div className="flex flex-col items-center w-1/3">
-              <div className="flex flex-row items-center w-full">
-                <label
-                  htmlFor="load-state"
-                  className="text-black dark:text-white pr-3 cursor-pointer mb-2"
-                >
-                  Load State:
-                </label>
-                <input
-                  id="load-state"
-                  type="file"
-                  onChange={loadState}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="load-state"
-                  className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600"
-                >
-                  Choose File
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="w-full flex flex-col items-center">
-          <h1 className="text-xl font-bold text-center mb-2">
-            Manage Timelines
-          </h1>
-          <p className="text-center mb-4">
-            Open the panel to access options for uploading or downloading
-            timeline states.
-          </p>
-          <FaArrowDown
-            size={20}
-            onClick={() => setShowFilePanel(true)}
-            className="cursor-pointer dark:text-white"
-          />
-        </div>
-      )}
+      <FileManageComponent
+        loadState={loadState}
+        loadStateAdd={loadStateAdd}
+        saveState={saveState}
+      />
       <div className="flex m-4 flex-col space-y-4 w-full p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"></div>
       <div className="w-full items-center flex justify-around">
         <div className="w-1/3 items-center">
           <button
             onClick={() => {
-              setShowSubmitTimelineModal(true);
+              if (!editable) return;
+
+              //if the timeline is new (initialTimeline is null), then setShowSubmitTimelineModal(true);
+              //else submit the timeline
+              if (initialTimeline === null) {
+                setShowSubmitTimelineModal(true);
+              } else {
+                submitTimeline();
+              }
             }}
             className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           >
-            Save Timeline To User Profile
+            {initialTimeline ? 'Edit' : 'Save'} Timeline To User Profile
           </button>
         </div>
         <div className="flex w-1/3 items-center justify-center">
@@ -615,41 +529,11 @@ const TimelineManager: React.FC = () => {
         </div>
       </div>
 
-      {
-        //filter slider if filterYears is set to true
-        filterYears ? (
-          <div className="flex flex-col items-center w-full">
-            <div
-              onClick={() => {
-                setFilterYears(false);
-              }}
-            >
-              <button className="p-2 bg-blue-500 text-white rounded mt-8 mb-2">
-                Stop Filtering Years{' '}
-              </button>
-            </div>
-            <h1 className="w-full text-center"> Filter Slider </h1>
-            <div className="w-full">
-              <YearSlider
-                initialStartYear={sliderStartYear}
-                initialEndYear={sliderEndYear}
-                onYearChange={handleSliderYearChange}
-              />
-            </div>
-          </div>
-        ) : (
-          <>
-            <div
-              onClick={() => setFilterYears(true)}
-              className="flex flex-row items-center w-full justify-center m-8"
-            >
-              <button className="p-2 bg-blue-500 text-white rounded">
-                Filter Years
-              </button>
-            </div>
-          </>
-        )
-      }
+      <YearFilterComponent
+        handleSliderYearChange={handleSliderYearChange}
+        sliderStartYear={sliderStartYear}
+        sliderEndYear={sliderEndYear}
+      />
 
       {state.show_multiple_timelines ? (
         <div className="w-full flex flex-col items-center">
@@ -693,6 +577,7 @@ const TimelineManager: React.FC = () => {
             onYearRangeChange={handleYearRangeChange}
             onDeleteTimeline={deleteTimeline}
             onEditTimeline={onEditTimeline}
+            publishable={initialTimeline ? true : false}
           />
         </div>
       ) : (
@@ -765,6 +650,29 @@ const TimelineManager: React.FC = () => {
                     : ''
                 }
               </div>
+              {/* Insert Spreadsheets Here  from react-spreadsheet*/}
+              <SpreadSheetComponent
+                currentEvents={currentEvents}
+                setCurrentEvents={setCurrentEvents}
+              />
+
+              {/* Button To Add Event */}
+              <FaPlus
+                onClick={() => {
+                  //add empty eve
+                  setCurrentEvents((prevEvents) => [
+                    ...prevEvents,
+                    {
+                      title: '',
+                      description: '',
+                      year: 0,
+                    },
+                  ]);
+                }}
+                className="cursor-pointer ml-2 dark:text-white"
+                size={20}
+                title="Add Event To Timeline"
+              />
             </div>
           ) : (
             <div className="w-full flex flex-col p-3">
@@ -902,6 +810,7 @@ const TimelineManager: React.FC = () => {
                 onYearRangeChange={handleYearRangeChange}
                 onDeleteTimeline={deleteTimeline}
                 onEditTimeline={onEditTimeline}
+                publishable={initialTimeline ? true : false}
               />
             </div>
           )}
@@ -912,168 +821,3 @@ const TimelineManager: React.FC = () => {
 };
 
 export default TimelineManager;
-
-//submit timeline modal takes in the Timlelines
-//and submits them as InsertionTimeLines
-//with a name and description
-const SubmitTimelineModal: React.FC<{
-  timelines: TimeLine[];
-  setShowSubmitTimelineModal: React.Dispatch<React.SetStateAction<boolean>>;
-}> = ({ timelines, setShowSubmitTimelineModal }) => {
-  const [submittedTimelineName, setSubmittedTimelineName] = useState('');
-  const [submittedTimelineDescription, setSubmittedTimelineDescription] =
-    useState('');
-
-  const saveTimeline = useSaveTimelineMutation();
-
-  const submitTimeline = async () => {
-    //convert timelines to TimelineAPI
-    const timelines_for_api = timelines.map((timeline) => ({
-      title: timeline.title,
-      description: timeline.description,
-      events: timeline.events,
-    }));
-
-    //make a InsertionTimeLine
-    const insertionTimeline: InsertionTimeLine = {
-      title: submittedTimelineName,
-      description: submittedTimelineDescription,
-      timelines: timelines_for_api,
-    };
-
-    console.log('insertionTimeline: ', insertionTimeline);
-
-    //make a new timeline
-    const submit = await saveTimeline.mutateAsync(insertionTimeline);
-
-    return submit;
-  };
-
-  return (
-    <div
-      className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-40"
-      onClick={() => setShowSubmitTimelineModal(false)}
-    >
-      <div
-        className="bg-white dark:bg-gray-800 w-full max-w-lg p-6 rounded-lg shadow-lg z-50"
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      >
-        <h1 className="text-2xl font-bold mb-4">Submit Timeline</h1>
-        <input
-          type="text"
-          value={submittedTimelineName}
-          onChange={(e) => setSubmittedTimelineName(e.target.value)}
-          placeholder="Timeline Name"
-          className="w-full p-2 mb-4 border rounded"
-        />
-        <textarea
-          value={submittedTimelineDescription}
-          onChange={(e) => setSubmittedTimelineDescription(e.target.value)}
-          placeholder="Timeline Description"
-          className="w-full p-2 mb-4 border rounded h-32 resize-none"
-        ></textarea>
-        <div className="flex justify-end space-x-4">
-          <button
-            onClick={() => setShowSubmitTimelineModal(false)}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={submitTimeline}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Submit
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-type SearchModalProps = {
-  add_timeline: (timeline: TimeLine) => void;
-  close_modal: () => void;
-  open_modal: boolean;
-};
-
-const SearchModal: React.FC<SearchModalProps> = ({
-  add_timeline,
-  close_modal,
-  open_modal,
-}) => {
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] =
-    useState<string>(searchTerm);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
-
-  const {
-    data: timelines,
-    isLoading,
-    isError,
-    error,
-  } = useSearchPublishedTimelines(debouncedSearchTerm);
-
-  if (!open_modal) return null;
-
-  return (
-    <div
-      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-      onClick={close_modal}
-    >
-      <div
-        className="bg-white dark:bg-gray-800 w-full max-w-lg p-6 rounded-lg shadow-lg z-50"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h1 className="text-2xl font-bold mb-4">Search Timelines</h1>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search for timelines"
-          className="p-2 border rounded w-full mb-4"
-        />
-        {isLoading && <p>Loading...</p>}
-        {isError && <p>Error: {error.message}</p>}
-        <ul>
-          {timelines?.map((timeline) => (
-            <li
-              key={timeline.id}
-              onClick={() =>
-                add_timeline({
-                  title: timeline.title,
-                  description: timeline.description,
-                  events: timeline.events,
-                  shown: true,
-                })
-              }
-              className="cursor-pointer p-2 border-b hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              {timeline.title}
-              <p>{timeline.description}</p>
-              {/* Number of Events Here */}
-              <p> Number of Events: {timeline.events.length} </p>
-            </li>
-          ))}
-        </ul>
-        <button
-          onClick={close_modal}
-          className="mt-4 p-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  );
-};

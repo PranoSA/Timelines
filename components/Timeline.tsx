@@ -1,13 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useMemo, useState, useCallback } from 'react';
-import { TimeLine, TimeEvent } from '../types';
-import { FaCheckCircle, FaRegCircle, FaTrash } from 'react-icons/fa';
+import { TimeLine, TimeEvent, PublishedTimelineEntered } from '../types';
+import {
+  FaCheckCircle,
+  FaRegCircle,
+  FaTrash,
+  FaBook,
+  FaPen,
+} from 'react-icons/fa';
 //icon that shows "publishing"
-import { FaBook } from 'react-icons/fa';
+
 import EventDetails from './EventDetails';
-import { FaPen } from 'react-icons/fa';
-import { useSavedTimelines } from '../queries/saved';
+
+import { usePublishTimelineMutation } from '@/queries/publish';
 
 type Props = {
   timelines: TimeLine[];
@@ -19,6 +25,7 @@ type Props = {
   onYearRangeChange?: (startYear: number, endYear: number) => void;
   onDeleteTimeline: (timeline: TimeLine) => void;
   onEditTimeline: (timeline: TimeLine) => void;
+  publishable: boolean;
 };
 
 const colors = [
@@ -49,6 +56,7 @@ const TimelineComponent: React.FC<Props> = ({
   onYearRangeChange,
   onDeleteTimeline,
   onEditTimeline,
+  publishable,
 }) => {
   const allEvents = showMultipleTimelines
     ? timelines.flatMap((timeline, timelineIndex) =>
@@ -58,7 +66,21 @@ const TimelineComponent: React.FC<Props> = ({
 
   const [maxEventsPerTimeline, setMaxEventsPerTimeline] = useState(10);
 
-  const publishTimeline = () => {};
+  const publishTimelineMutation = usePublishTimelineMutation();
+
+  const publishTimeline = async (timeline: TimeLine) => {
+    const timeline_to_publish: PublishedTimelineEntered = {
+      title: timeline.title,
+      description: timeline.description,
+      events: timeline.events,
+    };
+
+    const published = await publishTimelineMutation.mutateAsync(
+      timeline_to_publish
+    );
+
+    return published;
+  };
 
   //by
   const [selectedEvent, setSelectedEvent] = useState<TimeEvent | null>(null);
@@ -415,6 +437,14 @@ const TimelineComponent: React.FC<Props> = ({
                     size={30}
                     onClick={() => onDeleteTimeline(timeline)}
                   />
+                  {/* Now Button to Publish Timeline */}
+                  {publishable && (
+                    <FaBook
+                      className="text-blue-500"
+                      size={30}
+                      onClick={() => publishTimeline(timeline)}
+                    />
+                  )}
                 </div>
               </div>
             ))}
