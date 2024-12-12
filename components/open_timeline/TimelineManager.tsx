@@ -9,6 +9,16 @@ import {
   useContext,
 } from 'react';
 import React from 'react';
+import {
+  ReactGrid,
+  Column,
+  Row,
+  CellChange,
+  CellLocation,
+  TextCell,
+  NumberCell,
+} from '@silevis/reactgrid';
+import '@silevis/reactgrid/styles.css';
 
 import {
   ApplicationState,
@@ -758,67 +768,20 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
               {/* Insert Spreadsheets Here  from react-spreadsheet*/}
               <div className="relative flex w-full flex-row flex-wrap">
                 {/* 4/5 for the spreadsheet */}
-                <div className="flex flex-row overflow-auto w-4/5">
-                  <Spreadsheet
-                    className="w-full"
-                    data={[
-                      ...(currentEvents.map((event) => [
-                        { value: event.title },
-                        {
-                          value:
-                            event.description.length > 70
-                              ? `${event.description.substring(0, 70)}...`
-                              : event.description,
-                        },
-                        { value: event.year },
-                      ]) || []),
-                      //empty row
-                    ]}
-                    //set row names
-                    columnLabels={['Title', 'Description', 'Year']}
-                    //add ability to delete rows
-
-                    //on commit -> change current events
-                    onChange={(data) => {
-                      console.log('data: ', data);
-                      const newEvents = data.map((row) => ({
-                        title: (row[0]?.value as string) ?? '',
-                        description: (row[1]?.value as string) ?? '',
-                        year: (row[2]?.value as number) || 0,
-                      }));
-
-                      //if any difference -> set the current events
-                      //if no difference -> do nothing
-
-                      //check if newEvents is the same as currentEvents
-                      //if same - return
-                      if (
-                        newEvents.length === currentEvents.length &&
-                        newEvents.every((event, index) => {
-                          const currentEvent = currentEvents[index];
-                          return (
-                            event.title === currentEvent.title &&
-                            event.description === currentEvent.description &&
-                            event.year === currentEvent.year
-                          );
-                        })
-                      ) {
-                        return;
-                      }
-
-                      console.log('newEvents: ', newEvents);
-                      setCurrentEvents(newEvents);
-                    }}
-                  />
-                </div>
+                <SpreadSheetComponent
+                  currentEvents={currentEvents}
+                  setCurrentEvents={setCurrentEvents}
+                />
 
                 {/* 1/5 for deletion */}
-                <div className="w-1/5 mt-8">
+                <div className="w-1/5 mt-4">
                   {currentEvents.map((_, rowIndex) => (
                     <div
                       key={rowIndex}
-                      className="mt-4 mr-2 cursor-pointer"
-                      style={{ top: `${rowIndex * 32}px` }} // Adjust the position based on row height
+                      className=" cursor-pointer"
+                      style={{
+                        marginTop: `10px`,
+                      }} // Adjust the position based on row height
                       onClick={() => {
                         //delete the event index
                         const newEvents = currentEvents.filter(
@@ -1160,6 +1123,174 @@ const SearchModal: React.FC<SearchModalProps> = ({
       >
         Close
       </button>
+    </div>
+  );
+};
+
+type SpreadSheetProps = {
+  currentEvents: TimeEvent[];
+  setCurrentEvents: React.Dispatch<React.SetStateAction<TimeEvent[]>>;
+};
+
+const SpreadSheetComponent: React.FC<SpreadSheetProps> = ({
+  currentEvents,
+  setCurrentEvents,
+}) => {
+  const columns: Column[] = [
+    { columnId: 'title', width: 200 },
+    { columnId: 'description', width: 600 },
+    { columnId: 'year', width: 100 },
+  ];
+
+  const headerRow: Row = {
+    rowId: 'header',
+    cells: [
+      { type: 'header', text: 'Title' },
+      { type: 'header', text: 'Description' },
+      { type: 'header', text: 'Year' },
+    ],
+  };
+
+  /*
+  const getRows = (people: Person[]): Row[] => [
+  headerRow,
+  ...people.map<Row>((person, idx) => ({
+    rowId: idx,
+    cells: [
+      { type: "text", text: person.name },
+      { type: "text", text: person.surname }
+    ]
+  }))
+];
+*/
+
+  const getRows = (events: TimeEvent[]): Row[] => [
+    headerRow,
+    ...events.map<Row>((event, idx) => ({
+      rowId: idx,
+      cells: [
+        { type: 'text', text: event.title },
+        { type: 'text', text: event.description },
+        { type: 'text', text: event.year.toString() },
+      ],
+    })),
+  ];
+
+  /*
+  const applyChangesToPeople = (
+  changes: CellChange<TextCell>[],
+  prevPeople: Person[]
+): Person[] => {
+  changes.forEach((change) => {
+    const personIndex = change.rowId;
+    const fieldName = change.columnId;
+    prevPeople[personIndex][fieldName] = change.newCell.text;
+  });
+  return [...prevPeople];
+};
+*/
+
+  const applyChangesToEvents = (
+    changes: CellChange<TextCell>[],
+    prevEvents: TimeEvent[]
+  ): TimeEvent[] => {
+    changes.forEach((change) => {
+      const eventIndex = change.rowId as number;
+      const fieldName = change.columnId;
+      const newValue = change.newCell.text;
+
+      if (fieldName === 'title') {
+        prevEvents[eventIndex].title = newValue;
+      } else if (fieldName === 'description') {
+        prevEvents[eventIndex].description = newValue;
+      } else if (fieldName === 'year') {
+        prevEvents[eventIndex].year = parseInt(newValue, 10);
+      }
+    });
+    return [...prevEvents];
+  };
+  /*
+    const handleChanges = (changes: CellChange<TextCell>[]) => { 
+    setPeople((prevPeople) => applyChangesToPeople(changes, prevPeople)); 
+  }; 
+  */
+  const handleChanges = (changes: CellChange[]) => {
+    const textCellChanges = changes.filter(
+      (change): change is CellChange<TextCell> => change.type === 'text'
+    );
+    setCurrentEvents((prevEvents) =>
+      applyChangesToEvents(textCellChanges, prevEvents)
+    );
+  };
+
+  const rows = getRows(currentEvents);
+
+  //how do I reflect changes in the spreadsheet?
+  return (
+    <div className="flex flex-row overflow-auto w-4/5">
+      <ReactGrid
+        rows={rows}
+        columns={columns}
+        onCellsChanged={handleChanges}
+        //allow deleting rows
+        enableRowSelection
+      />
+    </div>
+  );
+
+  return (
+    <div className="flex flex-row overflow-auto w-4/5">
+      <Spreadsheet
+        className="w-full"
+        data={[
+          ...(currentEvents.map((event) => [
+            { value: event.title },
+            {
+              value:
+                event.description.length > 70
+                  ? `${event.description.substring(0, 70)}...`
+                  : event.description,
+            },
+            { value: event.year },
+          ]) || []),
+          //empty row
+        ]}
+        //set row names
+        columnLabels={['Title', 'Description', 'Year']}
+        //add ability to delete rows
+
+        //on commit -> change current events
+        onChange={(data) => {
+          console.log('data: ', data);
+          const newEvents = data.map((row) => ({
+            title: (row[0]?.value as string) ?? '',
+            description: (row[1]?.value as string) ?? '',
+            year: (row[2]?.value as number) || 0,
+          }));
+
+          //if any difference -> set the current events
+          //if no difference -> do nothing
+
+          //check if newEvents is the same as currentEvents
+          //if same - return
+          if (
+            newEvents.length === currentEvents.length &&
+            newEvents.every((event, index) => {
+              const currentEvent = currentEvents[index];
+              return (
+                event.title === currentEvent.title &&
+                event.description === currentEvent.description &&
+                event.year === currentEvent.year
+              );
+            })
+          ) {
+            return;
+          }
+
+          console.log('newEvents: ', newEvents);
+          setCurrentEvents(newEvents);
+        }}
+      />
     </div>
   );
 };
