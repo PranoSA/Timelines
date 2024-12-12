@@ -641,6 +641,35 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
                     title="Add Event To Timeline"
                   />
                 </div>
+                {/* Button To Save Events */}
+                <div className="mb-4 dark:text-black flex flex-row rounded bg-green-500">
+                  {/* BUtton To Save Events to current timeline and then save the timeline*/}
+                  <button
+                    onClick={() => {
+                      //set the current events to the current timeline
+                      //check that year is a valid number if parsed to a number
+                      const is_valid_year = currentEvents.every(
+                        (event) => !isNaN(event.year)
+                      );
+
+                      if (!is_valid_year) {
+                        alert('Year must be a number');
+                        return;
+                      }
+
+                      onEditTimelineNew({
+                        ...state.current_timeline!,
+                        events: currentEvents,
+                      });
+
+                      //close the add event form
+                      setAddingEvent(false);
+                    }}
+                    className="p-2 bg-green-500 text-white rounded"
+                  >
+                    Save Events
+                  </button>
+                </div>
               </div>
               <div className="flex space-x-4">
                 {
@@ -673,6 +702,32 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
                 size={20}
                 title="Add Event To Timeline"
               />
+              {/* button to save changes to timeline */}
+              <button
+                onClick={() => {
+                  //set the current events to the current timeline
+                  //check that year is a valid number if parsed to a number
+                  const is_valid_year = currentEvents.every(
+                    (event) => !isNaN(event.year)
+                  );
+
+                  if (!is_valid_year) {
+                    alert('Year must be a number');
+                    return;
+                  }
+
+                  onEditTimelineNew({
+                    ...state.current_timeline!,
+                    events: currentEvents,
+                  });
+
+                  //close the add event form
+                  setAddingEvent(false);
+                }}
+                className="p-2 bg-green-500 text-white rounded mt-2"
+              >
+                Save Events
+              </button>
             </div>
           ) : (
             <div className="w-full flex flex-col p-3">
