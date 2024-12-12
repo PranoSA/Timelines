@@ -4,9 +4,10 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { TimeLine, TimeEvent, PublishedTimelineEntered } from '@/types';
 import { FaCheckCircle, FaRegCircle } from 'react-icons/fa';
 //icon that shows "publishing"
-import { FaBook } from 'react-icons/fa';
+import { FaBook, FaPen, FaTrash } from 'react-icons/fa';
 import EventDetails from './EventDetails';
 import { useSavedTimelines } from '@/queries/saved';
+import { usePublishTimelineMutation } from '@/queries/publish';
 
 type Props = {
   timelines: TimeLine[];
@@ -115,6 +116,22 @@ const TimelineComponent: React.FC<Props> = ({
         : timelines[0].events.map((event) => ({ ...event, timelineIndex: 0 })),
     [filtered_timelines, showMultipleTimelines, timelines]
   );
+
+  const publishTimelineMutation = usePublishTimelineMutation();
+
+  const publishTimeline = async (timeline: TimeLine) => {
+    const timeline_to_publish: PublishedTimelineEntered = {
+      title: timeline.title,
+      description: timeline.description,
+      events: timeline.events,
+    };
+
+    const published = await publishTimelineMutation.mutateAsync(
+      timeline_to_publish
+    );
+
+    return published;
+  };
 
   const editEvent = (updatedEvent: TimeEvent) => {
     //find the timeline that the event belongs to
@@ -402,7 +419,22 @@ const TimelineComponent: React.FC<Props> = ({
                     }
                   >
                     {timeline.title}
+                    <FaPen
+                      className="ml-2"
+                      onClick={() => onEditTimeline(timeline)}
+                    />
                   </span>
+                  <FaTrash
+                    className="text-red-500"
+                    size={30}
+                    onClick={() => onDeleteTimeline(timeline)}
+                  />
+                  {/* Now Button to Publish Timeline */}
+                  <FaBook
+                    className="text-blue-500"
+                    size={30}
+                    onClick={() => publishTimeline(timeline)}
+                  />
                 </div>
               </div>
             ))}

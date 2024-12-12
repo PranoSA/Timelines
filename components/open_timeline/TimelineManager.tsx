@@ -1,5 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useMemo, useEffect, useRef, useContext } from 'react';
+
+import {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+  useContext,
+} from 'react';
+import React from 'react';
+
 import {
   ApplicationState,
   TimeLine,
@@ -746,56 +756,84 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
                 }
               </div>
               {/* Insert Spreadsheets Here  from react-spreadsheet*/}
-              <Spreadsheet
-                data={[
-                  ...(currentEvents.map((event) => [
-                    { value: event.title },
-                    {
-                      value:
-                        event.description.length > 30
-                          ? `${event.description.substring(0, 30)}...`
-                          : event.description,
-                    },
-                    { value: event.year },
-                  ]) || []),
-                  //empty row
-                ]}
-                //set row names
-                columnLabels={['Title', 'Description', 'Year']}
-                //add ability to delete rows
+              <div className="relative flex w-full flex-row flex-wrap">
+                {/* 4/5 for the spreadsheet */}
+                <div className="flex flex-row overflow-auto w-4/5">
+                  <Spreadsheet
+                    className="w-full"
+                    data={[
+                      ...(currentEvents.map((event) => [
+                        { value: event.title },
+                        {
+                          value:
+                            event.description.length > 70
+                              ? `${event.description.substring(0, 70)}...`
+                              : event.description,
+                        },
+                        { value: event.year },
+                      ]) || []),
+                      //empty row
+                    ]}
+                    //set row names
+                    columnLabels={['Title', 'Description', 'Year']}
+                    //add ability to delete rows
 
-                //on commit -> change current events
-                onChange={(data) => {
-                  console.log('data: ', data);
-                  const newEvents = data.map((row) => ({
-                    title: (row[0]?.value as string) ?? '',
-                    description: (row[1]?.value as string) ?? '',
-                    year: (row[2]?.value as number) || 0,
-                  }));
+                    //on commit -> change current events
+                    onChange={(data) => {
+                      console.log('data: ', data);
+                      const newEvents = data.map((row) => ({
+                        title: (row[0]?.value as string) ?? '',
+                        description: (row[1]?.value as string) ?? '',
+                        year: (row[2]?.value as number) || 0,
+                      }));
 
-                  //if any difference -> set the current events
-                  //if no difference -> do nothing
+                      //if any difference -> set the current events
+                      //if no difference -> do nothing
 
-                  //check if newEvents is the same as currentEvents
-                  //if same - return
-                  if (
-                    newEvents.length === currentEvents.length &&
-                    newEvents.every((event, index) => {
-                      const currentEvent = currentEvents[index];
-                      return (
-                        event.title === currentEvent.title &&
-                        event.description === currentEvent.description &&
-                        event.year === currentEvent.year
-                      );
-                    })
-                  ) {
-                    return;
-                  }
+                      //check if newEvents is the same as currentEvents
+                      //if same - return
+                      if (
+                        newEvents.length === currentEvents.length &&
+                        newEvents.every((event, index) => {
+                          const currentEvent = currentEvents[index];
+                          return (
+                            event.title === currentEvent.title &&
+                            event.description === currentEvent.description &&
+                            event.year === currentEvent.year
+                          );
+                        })
+                      ) {
+                        return;
+                      }
 
-                  console.log('newEvents: ', newEvents);
-                  setCurrentEvents(newEvents);
-                }}
-              />
+                      console.log('newEvents: ', newEvents);
+                      setCurrentEvents(newEvents);
+                    }}
+                  />
+                </div>
+
+                {/* 1/5 for deletion */}
+                <div className="w-1/5 mt-8">
+                  {currentEvents.map((_, rowIndex) => (
+                    <div
+                      key={rowIndex}
+                      className="mt-4 mr-2 cursor-pointer"
+                      style={{ top: `${rowIndex * 32}px` }} // Adjust the position based on row height
+                      onClick={() => {
+                        //delete the event index
+                        const newEvents = currentEvents.filter(
+                          (_, index) => index !== rowIndex
+                        );
+
+                        setCurrentEvents(newEvents);
+                      }}
+                    >
+                      <FaTrash className="text-red-500" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Button To Add Event */}
               <FaPlus
                 onClick={() => {
@@ -814,23 +852,7 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
                 title="Add Event To Timeline"
               />
               <h1> Events </h1>
-              {currentEvents.map((_, rowIndex) => (
-                <div
-                  key={rowIndex}
-                  className="mt-2 mr-2 cursor-pointer"
-                  style={{ top: `${rowIndex * 24}px` }} // Adjust the position based on row height
-                  onClick={() => {
-                    //delete the event index
-                    const newEvents = currentEvents.filter(
-                      (_, index) => index !== rowIndex
-                    );
 
-                    setCurrentEvents(newEvents);
-                  }}
-                >
-                  <FaTrash className="text-red-500" />
-                </div>
-              ))}
               {/* BUtton To Save Events to current timeline and then save the timeline*/}
               <button
                 onClick={() => {

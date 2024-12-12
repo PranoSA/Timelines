@@ -50,6 +50,10 @@ const usePublishTimelineMutation = () => {
 
 //search for publish timelines -> uses a "term" query parameter
 async function searchPublishedTimelines(term: string) {
+  if (term === '') {
+    return [];
+  }
+
   const response = await fetch(`${API_URL}/search?term=${term}`, {
     method: 'GET',
     headers: {

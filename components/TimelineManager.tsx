@@ -475,7 +475,7 @@ const TimelineManager: React.FC = () => {
         />
       )}
       {showFilePanel ? (
-        <div className="flex flex-col items-center space-y-4 w-full p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div className="flex flex-col items-center space-y-4 w-full p-4 bg-white dark:bg-gray-800 rounded-lg">
           <div className="flex justify-between items-center w-full mb-4">
             <h1 className="text-xl font-bold text-center w-full">
               Manage Timelines
@@ -563,17 +563,30 @@ const TimelineManager: React.FC = () => {
       )}
       <div className="flex m-4 flex-col space-y-4 w-full p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"></div>
       <div className="w-full items-center flex justify-around">
-        <div className="w-1/2 items-center">
+        <div className="w-1/3 items-center">
           <button
             onClick={() => {
               setShowSubmitTimelineModal(true);
             }}
             className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           >
-            Save Timeline
+            Save Timeline To User Profile
           </button>
         </div>
-        <div className="w-1/2 items-center">
+        <div className="flex w-1/3 items-center justify-center">
+          {
+            //if multipleTimelines then
+            state.show_multiple_timelines && (
+              <button
+                onClick={() => setAddingTimeline(true)}
+                className="p-2 bg-green-500 text-white rounded"
+              >
+                Add Timeline
+              </button>
+            )
+          }
+        </div>
+        <div className="w-1/3 items-center">
           {/* Search Modal */}
           {!showSearchModal ? (
             <div className="flex w-full flex-row justify-center items-center p-2">
@@ -611,13 +624,9 @@ const TimelineManager: React.FC = () => {
                 setFilterYears(false);
               }}
             >
-              <button className="p-2 bg-blue-500 text-white rounded">
+              <button className="p-2 bg-blue-500 text-white rounded mt-8 mb-2">
                 Stop Filtering Years{' '}
               </button>
-              <FaArrowUp
-                size={20}
-                className="cursor-pointer ml-2 dark:text-white"
-              />
             </div>
             <h1 className="w-full text-center"> Filter Slider </h1>
             <div className="w-full">
@@ -632,15 +641,11 @@ const TimelineManager: React.FC = () => {
           <>
             <div
               onClick={() => setFilterYears(true)}
-              className="flex flex-row items-center w-full justify-center mb-4"
+              className="flex flex-row items-center w-full justify-center m-8"
             >
               <button className="p-2 bg-blue-500 text-white rounded">
                 Filter Years
               </button>
-              <FaArrowDown
-                className="cursor-pointer ml-2 dark:text-white"
-                size={20}
-              />
             </div>
           </>
         )
@@ -676,14 +681,7 @@ const TimelineManager: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="mb-4 dark:text-black">
-              <button
-                onClick={() => setAddingTimeline(true)}
-                className="p-2 bg-green-500 text-white rounded"
-              >
-                Add Timeline
-              </button>
-            </div>
+            <div className="mb-4 dark:text-black"></div>
           )}
           <TimelineComponent
             timelines={state.timelines}
