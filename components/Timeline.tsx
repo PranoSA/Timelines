@@ -97,9 +97,23 @@ const TimelineComponent: React.FC<Props> = ({
     //if start year exists, return the max of the min of all events year and start year
     // if start year does not exist, return the min of all events year
     //its not startYear, its the min startYear of all events
+
+    //if startYear is defined -> set start_year to the first event AFTER startYear
+    //if start Year is not defined -> set start_year to the first event
+
+    //filter all events with larger year than startYear
+
+    //what it does currently is it gets the minimum year of all events that are larger than startYear
     () =>
       startYear
-        ? Math.max(Math.min(...allEvents.map((event) => event.year)), startYear)
+        ? Math.max(
+            Math.min(
+              ...allEvents
+                .filter((event) => event.year > startYear)
+                .map((event) => event.year)
+            ),
+            startYear
+          )
         : Math.min(...allEvents.map((event) => event.year)),
     [allEvents, startYear]
   );
@@ -309,8 +323,81 @@ const TimelineComponent: React.FC<Props> = ({
 
     //determine how many slots would make up "50px"
 
-    const allowed_distance_between_slots = ((end_year - start_year) / 100) * 10;
+    const width_ofscreen =
+      typeof window !== 'undefined' ? window.innerWidth : 0;
+
+    const allowed_distance_between_slots =
+      ((end_year - start_year) / width_ofscreen) * 100;
     //15% of the total range of years
+
+    //split into level based on [0, maxEventsPerTimeline][maxEventsPerTimeline, 2*maxEventsPerTimeline]
+    //etc.
+
+    let start = 0;
+    let end = maxEventsPerTimeline;
+    const level_ranges_events = [];
+    while (start < allEventsInRange.length) {
+      level_ranges_events.push(allEventsInRange.slice(start, end));
+      start = end;
+      end += maxEventsPerTimeline;
+    }
+
+    //then calculate levels for each index of allEventsInRange
+
+    //so it goes like this ->
+    const levels_for_each_index_of_events = [];
+    for (let i = 0; i < level_ranges_events.length; i++) {
+      const last_seen_at_level: { [key: number]: number } = {};
+
+      const level_range = level_ranges_events[i];
+      const levels_for_each_index_of_level_range = level_range.map(
+        (event, eventIndex) => {
+          let current_level_search = 0;
+
+          //here is how to search ->
+          //1 -> -1 -> 2 -> -2 -> 3 -> -3 -> 4 -> -4 -> 5 -> -5
+          //or 0->-1->1->-2->2->-3->3->-4->4->-5->5
+
+          //now search -> if key does not exist -> its fine
+          //if last seen at level exists -> check if the distance is greater than allowed_distance_between_slots
+          //then fill in the slot
+          while (
+            last_seen_at_level[current_level_search] &&
+            last_seen_at_level[current_level_search] +
+              allowed_distance_between_slots >
+              event.year
+          ) {
+            //current_level_search++;
+            //zig-zag current_level_search
+            if (current_level_search < 0) {
+              current_level_search = Math.abs(current_level_search);
+            } else {
+              current_level_search = -current_level_search - 1;
+            }
+            //current_level_search++;
+          }
+          //now place the event at the current level
+          last_seen_at_level[current_level_search] = event.year;
+
+          return current_level_search;
+        }
+      );
+
+      levels_for_each_index_of_events.push(
+        levels_for_each_index_of_level_range
+      );
+    }
+
+    console.log(
+      'levels_for_each_index_of_events: ',
+      levels_for_each_index_of_events
+    );
+
+    //flatten out the levels_for_each_index_of_eventt -> just extract every index from all levels
+    const allEventsInRange_levels = levels_for_each_index_of_events.flat();
+
+    //now find the max level
+    return allEventsInRange_levels;
 
     const levels_for_each_index_of_allEventsInRange = allEventsInRange.map(
       (event, eventIndex) => {
@@ -347,7 +434,7 @@ const TimelineComponent: React.FC<Props> = ({
 
     //find the max level
     return levels_for_each_index_of_allEventsInRange;
-  }, [allEventsInRange, start_year, end_year]);
+  }, [end_year, start_year, maxEventsPerTimeline, allEventsInRange]);
 
   //console.log('heightOfEvent: ', heightOfEvent);
 
@@ -364,9 +451,9 @@ const TimelineComponent: React.FC<Props> = ({
       return 0;
     }
     if (height_level > 0) {
-      return height_level * 60;
+      return height_level * 100;
     }
-    return 0 - height_level * 60 - 30;
+    return 0 - height_level * 100 - 80;
   };
 
   return (
@@ -456,26 +543,70 @@ const TimelineComponent: React.FC<Props> = ({
         const end_year = timeline_range.end_year;
         const start_year = timeline_range.start_year;
 
+        const start_index = index * maxEventsPerTimeline;
+
+        const end_index = Math.min(
+          (index + 1) * maxEventsPerTimeline,
+          allEventsInRange.length
+        );
+
+        console.log('Start Index: ', index * maxEventsPerTimeline);
+        console.log(
+          'End Index: ',
+          Math.min((index + 1) * maxEventsPerTimeline, allEventsInRange.length)
+        );
+
+        console.log('Height Offset: ', height_offset);
+        console.log('Height Of Event: ', heightOfEvent);
+
+        console.log(
+          'Slice of Height of Event: ',
+          heightOfEvent.slice(start_index, end_index)
+        );
+
+        const heightFromWeightOffsets = heightOfEvent
+          .slice(start_index, end_index)
+          .map(
+            (n) =>
+              heightFromHeightOffset(n) *
+              //multiply by 1 if positive, -1 if negative
+              (n > 0 ? 1 : -1)
+          );
+
+        console.log('Height From Weight Offsets: ', heightFromWeightOffsets);
+
+        const min_height = Math.min(...heightFromWeightOffsets);
+
+        const max_height = Math.max(...heightFromWeightOffsets);
+
+        console.log('Max Height: ', max_height);
+        console.log('Min Height: ', min_height);
+
         return (
-          <div key={index}>
+          <div key={index} className="">
             <>
               <div
                 className=""
                 style={{
                   height: `${
                     //largest negative in heightOfEvent * 60
-                    Math.max(...heightOfEvent.map((n) => Math.abs(n))) * 60 +
-                    100
+                    Math.max(Math.abs(min_height), max_height) + 25
                   }px`,
                 }}
               ></div>
               <div className="relative ">
                 <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-300 dark:bg-gray-700"></div>
                 <div className="events relative w-full">
-                  {timeline_range.events.map((event, eventIndex) => {
+                  {timeline_range.events.map((event, event_index) => {
                     const leftPosition =
                       ((event.year - start_year) / (end_year - start_year)) *
                       100;
+
+                    //to get eventIndex, add maxEventsPerTimeline * index + event_index
+                    const eventIndex =
+                      maxEventsPerTimeline * index + event_index;
+
+                    console.log('eventIndex: ', eventIndex);
 
                     const isAbove = heightOfEvent[eventIndex] < 0;
                     // const verticalOffset = Math.floor(eventIndex / 2) * 30; // Adjust the offset as needed
@@ -498,11 +629,16 @@ const TimelineComponent: React.FC<Props> = ({
                         }}
                       >
                         <div
-                          className={`absolute ${
-                            isAbove ? 'bottom-full mb-2' : 'top-full mt-2'
-                          } left-1/2 transform -translate-x-1/2`}
+                          className={` 
+    width-[150px]
+    h-[100px]
+    border-4 border-purple-500 absolute ${
+      isAbove ? 'bottom-full mb-2' : 'top-full mt-2'
+    } left-1/2 transform -translate-x-1/2 overflow-auto`}
                           style={{
                             [isAbove ? 'bottom' : 'top']: `${verticalOffset}px`,
+                            width: '150px',
+                            height: '100px',
                           }}
                         >
                           <span
@@ -533,7 +669,10 @@ const TimelineComponent: React.FC<Props> = ({
               <div
                 className=""
                 style={{
-                  height: `${height_offset + 50}px `,
+                  // height: `${height_offset + 50}px `,
+                  height: `${
+                    Math.max(Math.abs(min_height), max_height) + 100
+                  }px`,
                 }}
               >
                 {' '}
@@ -547,7 +686,7 @@ const TimelineComponent: React.FC<Props> = ({
                   <>
                     <div
                       style={{
-                        padding: '25px',
+                        margin: '1px',
                       }}
                     >
                       <EventDetails
@@ -558,6 +697,9 @@ const TimelineComponent: React.FC<Props> = ({
                   </>
                 )}
             </>
+            <div style={{ height: '75px', border: '' }}>
+              <div className="w-full h-[2px] bg-black my-4"></div>{' '}
+            </div>
           </div>
         );
       })}
