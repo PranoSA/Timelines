@@ -326,8 +326,10 @@ const TimelineComponent: React.FC<Props> = ({
     const width_ofscreen =
       typeof window !== 'undefined' ? window.innerWidth : 0;
 
+    const number_of_timelines = timeline_ranges.length;
+
     const allowed_distance_between_slots =
-      ((end_year - start_year) / width_ofscreen) * 100;
+      (((end_year - start_year) / width_ofscreen) * 200) / number_of_timelines;
     //15% of the total range of years
 
     //split into level based on [0, maxEventsPerTimeline][maxEventsPerTimeline, 2*maxEventsPerTimeline]
@@ -363,10 +365,13 @@ const TimelineComponent: React.FC<Props> = ({
           //then fill in the slot
           while (
             last_seen_at_level[current_level_search] &&
-            last_seen_at_level[current_level_search] +
+            //@ts-expect-error: last_seen_at_level might not have current_level_search key
+            parseInt(last_seen_at_level[current_level_search]) +
               allowed_distance_between_slots >
               event.year
           ) {
+            console.log('Last Seen At Level: ', last_seen_at_level);
+            console.log('Distance', allowed_distance_between_slots);
             //current_level_search++;
             //zig-zag current_level_search
             if (current_level_search < 0) {
@@ -377,8 +382,17 @@ const TimelineComponent: React.FC<Props> = ({
             //current_level_search++;
           }
           //now place the event at the current level
+          console.log('Event Year: ', event.year);
+          console.log(
+            'Difference',
+            last_seen_at_level[current_level_search] +
+              allowed_distance_between_slots
+          );
+          console.log('Current Level Search: ', current_level_search);
           last_seen_at_level[current_level_search] = event.year;
 
+          console.log('Last Seen At Level AFTER: ', last_seen_at_level);
+          console.log('Distance AFTER', allowed_distance_between_slots);
           return current_level_search;
         }
       );
@@ -434,7 +448,13 @@ const TimelineComponent: React.FC<Props> = ({
 
     //find the max level
     return levels_for_each_index_of_allEventsInRange;
-  }, [end_year, start_year, maxEventsPerTimeline, allEventsInRange]);
+  }, [
+    timeline_ranges.length,
+    end_year,
+    start_year,
+    maxEventsPerTimeline,
+    allEventsInRange,
+  ]);
 
   //console.log('heightOfEvent: ', heightOfEvent);
 
@@ -605,8 +625,6 @@ const TimelineComponent: React.FC<Props> = ({
                     //to get eventIndex, add maxEventsPerTimeline * index + event_index
                     const eventIndex =
                       maxEventsPerTimeline * index + event_index;
-
-                    console.log('eventIndex: ', eventIndex);
 
                     const isAbove = heightOfEvent[eventIndex] < 0;
                     // const verticalOffset = Math.floor(eventIndex / 2) * 30; // Adjust the offset as needed
