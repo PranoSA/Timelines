@@ -329,7 +329,7 @@ const TimelineComponent: React.FC<Props> = ({
     const number_of_timelines = timeline_ranges.length;
 
     const allowed_distance_between_slots =
-      (((end_year - start_year) / width_ofscreen) * 250) / number_of_timelines;
+      (((end_year - start_year) / width_ofscreen) * 150) / number_of_timelines;
     //15% of the total range of years
 
     //split into level based on [0, maxEventsPerTimeline][maxEventsPerTimeline, 2*maxEventsPerTimeline]
