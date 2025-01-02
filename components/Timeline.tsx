@@ -109,7 +109,7 @@ const TimelineComponent: React.FC<Props> = ({
         ? Math.max(
             Math.min(
               ...allEvents
-                .filter((event) => event.year > startYear)
+                .filter((event) => event.year >= startYear)
                 .map((event) => event.year)
             ),
             startYear
