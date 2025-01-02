@@ -80,7 +80,6 @@ const Page = () => {
   const [description, setDescription] = useState('');
 
   useEffect(() => {
-    console.log('session', session);
     //set local storage bearer token
     if (typeof window !== 'undefined' && session) {
       localStorage.setItem('accessToken', session?.accessToken as string);

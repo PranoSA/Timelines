@@ -34,7 +34,6 @@ const HomeWithQueryClientProvider = () => {
 
 function Home() {
   const session = useSession();
-  console.log('session', session);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white">
@@ -56,8 +55,6 @@ function Home() {
 
 const SignInButton = () => {
   const session = useSession();
-
-  console.log('session', session);
 
   //on session change, store accessToken in local storage
   useEffect(() => {

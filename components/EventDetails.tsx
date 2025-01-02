@@ -65,8 +65,6 @@ const EventDetails: React.FC<Props> = ({ event, editEvent }) => {
       year: editedEventYear,
     };
 
-    console.log(updatedEvent);
-
     editEvent(updatedEvent);
     setEditingEvent(false);
     setEditedField(null);

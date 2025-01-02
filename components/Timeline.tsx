@@ -173,10 +173,6 @@ const TimelineComponent: React.FC<Props> = ({
       })
     );
 
-    console.log('selectedEvent: ', selectedEvent);
-
-    console.log('timeline: ', timeline);
-
     if (!timeline) return;
 
     //find the index of the event
@@ -187,14 +183,8 @@ const TimelineComponent: React.FC<Props> = ({
         event.description === selectedEvent.description
     );
 
-    console.log('updatedEvent: ', updatedEvent);
-
-    console.log('eventIndex: ', eventIndex);
-
     //edit the event
     timeline.events[eventIndex] = updatedEvent;
-
-    console.log('timeline.events[eventIndex]: ', timeline.events[eventIndex]);
 
     //edit the timeline
     onEditTimeline(timeline);
@@ -216,11 +206,6 @@ const TimelineComponent: React.FC<Props> = ({
     });
   };
 
-  //console.log('start_year: ', start_year);
-  //console.log('Slider Start Year Prop: ', startYear);
-  //console.log('end_year: ', end_year);
-  //console.log('Slider End Year Prop: ', endYear);
-
   //filter out events that are not within the range of the slider
   const allEventsInRange = useMemo(
     () =>
@@ -229,8 +214,6 @@ const TimelineComponent: React.FC<Props> = ({
         .sort((a, b) => a.year - b.year),
     [all_filtered_events, start_year, end_year]
   );
-
-  //console.log('allEventsInRange: ', allEventsInRange);
 
   //every time timelines changes, change filtered_timelines to include all timelines that weren't filtered out
   //this is to ensure that when timelines change, the new timelines are included
@@ -370,8 +353,6 @@ const TimelineComponent: React.FC<Props> = ({
               allowed_distance_between_slots >
               event.year
           ) {
-            console.log('Last Seen At Level: ', last_seen_at_level);
-            console.log('Distance', allowed_distance_between_slots);
             //current_level_search++;
             //zig-zag current_level_search
             if (current_level_search < 0) {
@@ -381,18 +362,9 @@ const TimelineComponent: React.FC<Props> = ({
             }
             //current_level_search++;
           }
-          //now place the event at the current level
-          console.log('Event Year: ', event.year);
-          console.log(
-            'Difference',
-            last_seen_at_level[current_level_search] +
-              allowed_distance_between_slots
-          );
-          console.log('Current Level Search: ', current_level_search);
+
           last_seen_at_level[current_level_search] = event.year;
 
-          console.log('Last Seen At Level AFTER: ', last_seen_at_level);
-          console.log('Distance AFTER', allowed_distance_between_slots);
           return current_level_search;
         }
       );
@@ -401,11 +373,6 @@ const TimelineComponent: React.FC<Props> = ({
         levels_for_each_index_of_level_range
       );
     }
-
-    console.log(
-      'levels_for_each_index_of_events: ',
-      levels_for_each_index_of_events
-    );
 
     //flatten out the levels_for_each_index_of_eventt -> just extract every index from all levels
     const allEventsInRange_levels = levels_for_each_index_of_events.flat();
@@ -455,8 +422,6 @@ const TimelineComponent: React.FC<Props> = ({
     maxEventsPerTimeline,
     allEventsInRange,
   ]);
-
-  //console.log('heightOfEvent: ', heightOfEvent);
 
   const height_offset =
     Math.max(...heightOfEvent.map((n) => Math.abs(n))) * 50 + 100;
@@ -570,20 +535,6 @@ const TimelineComponent: React.FC<Props> = ({
           allEventsInRange.length
         );
 
-        console.log('Start Index: ', index * maxEventsPerTimeline);
-        console.log(
-          'End Index: ',
-          Math.min((index + 1) * maxEventsPerTimeline, allEventsInRange.length)
-        );
-
-        console.log('Height Offset: ', height_offset);
-        console.log('Height Of Event: ', heightOfEvent);
-
-        console.log(
-          'Slice of Height of Event: ',
-          heightOfEvent.slice(start_index, end_index)
-        );
-
         const heightFromWeightOffsets = heightOfEvent
           .slice(start_index, end_index)
           .map(
@@ -593,14 +544,9 @@ const TimelineComponent: React.FC<Props> = ({
               (n > 0 ? 1 : -1)
           );
 
-        console.log('Height From Weight Offsets: ', heightFromWeightOffsets);
-
         const min_height = Math.min(...heightFromWeightOffsets);
 
         const max_height = Math.max(...heightFromWeightOffsets);
-
-        console.log('Max Height: ', max_height);
-        console.log('Min Height: ', min_height);
 
         return (
           <div key={index} className="">

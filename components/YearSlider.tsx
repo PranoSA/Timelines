@@ -35,12 +35,6 @@ const YearSlider: React.FC<Props> = ({
 
   const dragging = useRef<'start' | 'end' | null>(null);
 
-  // print when initialStartYear and initialEndYear changes
-  useEffect(() => {
-    console.log('sliderStartYear: ', sliderStartYear);
-    console.log('sliderEndYear: ', sliderEndYear);
-  }, [sliderStartYear, sliderEndYear]);
-
   const expandToEntireRange = () => {
     setSliderStartYear(initialStartYear);
     setSliderEndYear(initialEndYear);
@@ -49,11 +43,6 @@ const YearSlider: React.FC<Props> = ({
 
   //print out initialStartYear and initialEndYear
   useEffect(() => {
-    console.log('initialStartYear: ', initialStartYear);
-    console.log('initialEndYear: ', initialEndYear);
-    console.log('sliderStartYear: ', sliderStartYear);
-    console.log('sliderEndYear: ', sliderEndYear);
-    console.log('---');
     //if initialStartYear changes in a way that makes the current slider not part of the range,
     //update the slider to be part of the range
     let newSliderStartYear = sliderStartYear;

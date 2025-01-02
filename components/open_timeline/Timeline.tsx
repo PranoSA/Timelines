@@ -151,10 +151,6 @@ const TimelineComponent: React.FC<Props> = ({
       })
     );
 
-    console.log('selectedEvent: ', selectedEvent);
-
-    console.log('timeline: ', timeline);
-
     if (!timeline) return;
 
     //find the index of the event

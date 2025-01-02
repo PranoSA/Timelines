@@ -62,13 +62,10 @@ const authOptions: AuthOptions = {
     async session({ session, token, user }) {
       //      session.user = user;
       //     session.user.sub = token.sub;
-      console.log('KEYCLOAK_ISSUER', process.env.KEYCLOAK_ISSUER);
-      console.log('KEYCLOAK_CLIENT_ID', process.env.KEYCLOAK_CLIENT_ID);
-      console.log('KEYCLOAK_CLIENT_SECRET', process.env.KEYCLOAK_CLIENT_SECRET);
-      console.log('KEYCLOAK_ISSUER_URL', process.env.KEYCLOAK_ISSUER_URL);
 
       //check session error
       if (token.error) {
+        console.error('Session error', token.error);
         //log user out, and invalidate session
         session.expires = new Date(0).toISOString();
         session.accessToken = undefined;
@@ -103,15 +100,19 @@ const authOptions: AuthOptions = {
       }
 
       // Return previous token if the access token has not expired yet
+      //5 minutes before expiration
+      //29 minutes before expiration -> because why not??
+      const num_minutes_before_expiration = 29;
+      const expires = num_minutes_before_expiration * 60 * 1000;
       //@ts-expect-error: token.accessTokenExpires might be undefined
-      if (Date.now() < token.accessTokenExpires) {
+      if (Date.now() < token.accessTokenExpires - expires) {
         return token;
       }
 
       //if refresh token is expires, log out
 
       // Access token has expired, try to update it
-      const extrapolated = refreshAccessToken(token);
+      const extrapolated = await refreshAccessToken(token);
 
       //@ts-expect-error: token.accessTokenExpires might be undefined
       if (extrapolated.error) {
