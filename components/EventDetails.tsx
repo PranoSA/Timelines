@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaPen } from 'react-icons/fa';
+import { FaPen, FaTimes } from 'react-icons/fa';
 import { TimeEvent } from '../types';
 
 type Props = {
   event: TimeEvent | null;
   editEvent: (updatedEvent: TimeEvent) => void;
+  closeEvent: () => void;
 };
 
-const EventDetails: React.FC<Props> = ({ event, editEvent }) => {
+const EventDetails: React.FC<Props> = ({ event, editEvent, closeEvent }) => {
   const [editingEvent, setEditingEvent] = useState<boolean>(false);
   const [editedField, setEditedField] = useState<
     'title' | 'description' | 'year' | null
@@ -74,6 +75,14 @@ const EventDetails: React.FC<Props> = ({ event, editEvent }) => {
 
   return (
     <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md relative">
+      {/* Fixed the close button */}
+      <FaTimes
+        className="absolute top-2 right-2 cursor-pointer"
+        onClick={() => {
+          closeEvent();
+        }}
+        size={20}
+      />
       <div className="flex items-center mb-4">
         {editingEvent && editedField === 'year' ? (
           <input

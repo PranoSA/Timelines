@@ -656,6 +656,7 @@ const TimelineComponent: React.FC<Props> = ({
                       <EventDetails
                         event={selectedEvent}
                         editEvent={editEvent}
+                        closeEvent={() => setSelectedEvent(null)}
                       />
                     </div>
                   </>
