@@ -468,66 +468,89 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
         saveState={saveState}
       />
       <div className="flex m-4 flex-col space-y-4 w-full p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"></div>
-      <div className="w-full items-center flex justify-around">
-        <div className="w-1/3 items-center">
-          <button
-            onClick={() => {
-              if (!editable) return;
+      {editable ? (
+        <div className="w-full items-center flex justify-around">
+          <div className="w-1/3 items-center">
+            <button
+              onClick={() => {
+                if (!editable) return;
 
-              //if the timeline is new (initialTimeline is null), then setShowSubmitTimelineModal(true);
-              //else submit the timeline
-              if (initialTimeline === null) {
-                setShowSubmitTimelineModal(true);
-              } else {
-                submitTimeline();
-              }
-            }}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            {initialTimeline ? 'Edit' : 'Save'} Timeline To User Profile
-          </button>
-        </div>
-        <div className="flex w-1/3 items-center justify-center">
-          {
-            //if multipleTimelines then
-            state.show_multiple_timelines && (
-              <button
-                onClick={() => setAddingTimeline(true)}
-                className="p-2 bg-green-500 text-white rounded"
-              >
-                Add Timeline
-              </button>
-            )
-          }
-        </div>
-        <div className="w-1/3 items-center">
-          {/* Search Modal */}
-          {!showSearchModal ? (
-            <div className="flex w-full flex-row justify-center items-center p-2">
-              <button
-                onClick={() => setShowSearchModal(true)}
-                className="p-2 bg-blue-500 text-white rounded flex-col justify-center items-center"
-                title="Search Published Timelines By Title and Description"
-              >
-                <div className="flex flex-row justify-center items-center">
-                  Search Timelines
-                  <FaSearch
-                    className="cursor-pointer ml-2 dark:text-white"
-                    size={20}
-                  />
-                </div>
-              </button>
+                //if the timeline is new (initialTimeline is null), then setShowSubmitTimelineModal(true);
+                //else submit the timeline
+                if (initialTimeline === null) {
+                  setShowSubmitTimelineModal(true);
+                } else {
+                  submitTimeline();
+                }
+              }}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            >
+              {initialTimeline ? 'Edit' : 'Save'} Timeline To User Profile
+            </button>
+          </div>
+          <div className="flex w-1/3 items-center justify-center">
+            {
+              //if multipleTimelines then
+              state.show_multiple_timelines && (
+                <button
+                  onClick={() => setAddingTimeline(true)}
+                  className="p-2 bg-green-500 text-white rounded"
+                >
+                  Add Timeline
+                </button>
+              )
+            }
+          </div>
+          <div className="w-1/3 items-center">
+            {/* Search Modal */}
+            {!showSearchModal ? (
+              <div className="flex w-full flex-row justify-center items-center p-2">
+                <button
+                  onClick={() => setShowSearchModal(true)}
+                  className="p-2 bg-blue-500 text-white rounded flex-col justify-center items-center"
+                  title="Search Published Timelines By Title and Description"
+                >
+                  <div className="flex flex-row justify-center items-center">
+                    Search Timelines
+                    <FaSearch
+                      className="cursor-pointer ml-2 dark:text-white"
+                      size={20}
+                    />
+                  </div>
+                </button>
+              </div>
+            ) : null}
+            <div className="w-full flex flex-row flex-wrap justify-center">
+              <SearchModal
+                open_modal={showSearchModal}
+                close_modal={() => setShowSearchModal(false)}
+                add_timeline={addTimelineWithTimeline}
+              />
             </div>
-          ) : null}
-          <div className="w-full flex flex-row flex-wrap justify-center">
-            <SearchModal
-              open_modal={showSearchModal}
-              close_modal={() => setShowSearchModal(false)}
-              add_timeline={addTimelineWithTimeline}
-            />
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="w-full items-center flex justify-around">
+          <div className="w-1/3 items-center">
+            <button
+              onClick={() => {
+                if (!editable) return;
+
+                //if the timeline is new (initialTimeline is null), then setShowSubmitTimelineModal(true);
+                //else submit the timeline
+                if (initialTimeline === null) {
+                  setShowSubmitTimelineModal(true);
+                } else {
+                  submitTimeline();
+                }
+              }}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            >
+              {initialTimeline ? 'Edit' : 'Save'} Timeline To User Profile
+            </button>
+          </div>
+        </div>
+      )}
 
       <YearFilterComponent
         handleSliderYearChange={handleSliderYearChange}
@@ -578,6 +601,7 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
             onDeleteTimeline={deleteTimeline}
             onEditTimeline={onEditTimeline}
             publishable={initialTimeline ? true : false}
+            editable={editable}
           />
         </div>
       ) : (
@@ -606,24 +630,27 @@ const TimelineManager: React.FC<TimelineManagerProps> = ({
                     {state.current_timeline ? state.current_timeline.title : ''}
                   </h1>
                   {/* Put the edit functionality here instead */}
-                  <FaPen
-                    onClick={() => {
-                      setEditingTimeline(state.current_timeline);
-                      setEditedTimelineTitle(
-                        state.current_timeline
-                          ? state.current_timeline.title
-                          : ''
-                      );
-                      setEditedTimelineDescription(
-                        state.current_timeline
-                          ? state.current_timeline.description
-                          : ''
-                      );
-                    }}
-                    className="cursor-pointer ml-2 dark:text-white"
-                    size={20}
-                    title="Alter Timeline Title and Description"
-                  />
+                  {
+                    <FaPen
+                      onClick={() => {
+                        if (!editable) return;
+                        setEditingTimeline(state.current_timeline);
+                        setEditedTimelineTitle(
+                          state.current_timeline
+                            ? state.current_timeline.title
+                            : ''
+                        );
+                        setEditedTimelineDescription(
+                          state.current_timeline
+                            ? state.current_timeline.description
+                            : ''
+                        );
+                      }}
+                      className="cursor-pointer ml-2 dark:text-white"
+                      size={20}
+                      title="Alter Timeline Title and Description"
+                    />
+                  }
                 </div>
                 {/*Write the Add Event Button Here instead*/}
                 <div className="mb-4 dark:text-black flex flex-row rounded bg-green-500">

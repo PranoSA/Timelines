@@ -26,6 +26,7 @@ type Props = {
   onDeleteTimeline: (timeline: TimeLine) => void;
   onEditTimeline: (timeline: TimeLine) => void;
   publishable: boolean;
+  editable?: boolean;
 };
 
 const colors = [
@@ -57,6 +58,7 @@ const TimelineComponent: React.FC<Props> = ({
   onDeleteTimeline,
   onEditTimeline,
   publishable,
+  editable = true,
 }) => {
   const allEvents = showMultipleTimelines
     ? timelines.flatMap((timeline, timelineIndex) =>
@@ -494,23 +496,28 @@ const TimelineComponent: React.FC<Props> = ({
                         ? 'font-bold'
                         : 'font-normal'
                     }`}
-                    onClick={() =>
-                      onSelectTimeline && onSelectTimeline(timeline)
-                    }
+                    onClick={() => {
+                      if (!editable) return;
+                      if (onSelectTimeline) onSelectTimeline(timeline);
+                    }}
                   >
                     {timeline.title}
-                    <FaPen
-                      className="ml-2"
-                      onClick={() => onEditTimeline(timeline)}
-                    />
+                    {editable && (
+                      <FaPen
+                        className="ml-2"
+                        onClick={() => onEditTimeline(timeline)}
+                      />
+                    )}
                   </span>
-                  <FaTrash
-                    className="text-red-500"
-                    size={30}
-                    onClick={() => onDeleteTimeline(timeline)}
-                  />
+                  {editable && (
+                    <FaTrash
+                      className="text-red-500"
+                      size={30}
+                      onClick={() => onDeleteTimeline(timeline)}
+                    />
+                  )}
                   {/* Now Button to Publish Timeline */}
-                  {publishable && (
+                  {editable && publishable && (
                     <FaBook
                       className="text-blue-500"
                       size={30}

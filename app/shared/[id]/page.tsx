@@ -22,7 +22,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 
 import queryClient from '@/queries/queryClient';
 import { useSavedTimelines, useSavedTimelineById } from '@/queries/saved';
-import TimelineManager from '@/components/shared_timeline/TimelineManager';
+import TimelineManager from '@/components/TimelineManager';
 
 //SessionProvider
 import {
@@ -91,13 +91,13 @@ const Page = () => {
     }
   }, [session]);
 
-  if (!session?.accessToken) {
+  /* if (!session?.accessToken) {
     return (
       <div>
         <button onClick={() => signIn()}>Sign In</button>
       </div>
     );
-  }
+  }*/
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -126,7 +126,7 @@ const Page = () => {
           {savedTimeline?.description}
         </p>
       </div>
-      <TimelineManager initialTimeline={savedTimeline} />
+      <TimelineManager initialTimeline={savedTimeline} editable={false} />
     </div>
   );
 };
